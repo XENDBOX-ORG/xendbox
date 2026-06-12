@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@xendbox/database": [
+        "packages/database/src"
+      ],
+      "@xendbox/shared": [
+        "packages/shared/src"
+      ],
+      "@xendbox/types": [
+        "packages/types/src"
+      ],
+      "@xendbox/validation": [
+        "packages/validation/src"
+      ],
+      "@xendbox/auth": [
+        "packages/auth/src"
+      ],
+      "@xendbox/maps": [
+        "packages/maps/src"
+      ],
+      "@xendbox/notifications": [
+        "packages/notifications/src"
+      ]
+    }
+  }
+}

@@ -1,0 +1,47 @@
+node_modules
+dist
+build
+.next
+coverage
+
+# env
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Expo
+.expo
+.expo-shared
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# iOS
+ios/Pods
+ios/build
+*.xcworkspace
+*.xcuserdata
+
+# Android
+android/app/build
+android/.gradle
+android/build
+local.properties
+*.iml
+
+# Prisma
+.prisma
+generated/
+
+# IDE
+.vscode/settings.json
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
