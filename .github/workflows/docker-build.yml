@@ -3,12 +3,6 @@ name: Build API Docker Image
 on:
   push:
     branches: [main]
-    paths:
-      - 'apps/api/**'
-      - 'packages/notifications/**'
-      - 'Dockerfile'
-      - 'package.json'
-      - 'package-lock.json'
   pull_request:
     branches: [main]
     paths:
