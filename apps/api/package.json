@@ -4,11 +4,15 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts"
+    "start": "tsx src/index.ts",
+    "build": "tsc"
   },
   "dependencies": {
+    "@hono/node-server": "^1.14.1",
     "@xendbox/database": "*",
-    "hono": "^4.7.4"
+    "@xendbox/notifications": "*",
+    "hono": "^4.7.4",
+    "resend": "^4.2.0"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10",

@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gray-800 dark:border-gray-200;
+  }
+  body {
+    @apply bg-dark text-white antialiased dark:bg-gray-50 dark:text-gray-900;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-500 to-orange-400;
+  }
+  .glass {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-xl dark:bg-white/80 dark:border-gray-200 dark:shadow-lg;
+  }
+  .glass-hover {
+    @apply hover:bg-white/[0.07] transition-colors duration-300 dark:hover:bg-gray-100;
+  }
+  .glow {
+    box-shadow: 0 0 40px rgba(255, 90, 31, 0.15);
+  }
+  .glow-orange {
+    box-shadow: 0 0 60px rgba(255, 90, 31, 0.2);
+  }
+  .bg-grid {
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .dark\:bg-grid-light {
+    background-image: 
+      linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .bg-dot {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .dark\:bg-dot-light {
+    background-image: radial-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background: rgba(255, 90, 31, 0.3);
+}
+
+.dark\:selection-light ::selection {
+  background: rgba(255, 90, 31, 0.15);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #111827;
+}
+:root:not(.dark) ::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 3px;
+}
+:root:not(.dark) ::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4B5563;
+}
+:root:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
