@@ -9,11 +9,21 @@
     "dev:api": "npm run -w api dev",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "prisma:seed": "tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
     "nx": "^22.7.5",
-    "prisma": "^6.19.3"
+    "prisma": "^6.19.3",
+    "tsx": "^4.22.4"
+  },
+  "devDependencies": {
+    "nx": "^22.7.5",
+    "prisma": "^6.19.3",
+    "tsx": "^4.23.1"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3"
@@ -23,14 +33,14 @@
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/xendboxafrica/zendbox.git"
+    "url": "git+https://github.com/xendboxafrica/xendbox.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/xendboxafrica/zendbox/issues"
+    "url": "https://github.com/xendboxafrica/xendbox/issues"
   },
-  "homepage": "https://github.com/xendboxafrica/zendbox#readme"
+  "homepage": "https://github.com/xendboxafrica/xendbox#readme"
 }

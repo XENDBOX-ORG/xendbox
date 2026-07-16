@@ -9,12 +9,17 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.14.1",
+    "@xendbox/auth": "*",
     "@xendbox/database": "*",
     "@xendbox/notifications": "*",
+    "@xendbox/types": "*",
+    "bcryptjs": "^2.4.3",
     "hono": "^4.7.4",
+    "jsonwebtoken": "^9.0.2",
     "resend": "^4.2.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.9.3",
     "tsx": "^4.22.4",

@@ -6,3 +6,550 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum OrganizationType {
+  MERCHANT
+  LOGISTICS_COMPANY
+  PICKUP_STATION
+}
+
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ConsumerType {
+  INDIVIDUAL
+  MERCHANT
+}
+
+enum OrderStatus {
+  CREATED
+  PAYMENT_PENDING
+  PAID
+  SEARCHING_RIDER
+  RIDER_ASSIGNED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  ARRIVED_AT_STATION
+  READY_FOR_COLLECTION
+  COLLECTED
+  FAILED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum DeliveryOptionType {
+  HOME
+  PICKUP_STATION
+}
+
+enum RiderType {
+  INDEPENDENT
+  COMPANY
+}
+
+enum RiderAccountStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum AvailabilityStatus {
+  ONLINE
+  OFFLINE
+  BUSY
+  PAUSED
+}
+
+enum VehicleStatus {
+  ACTIVE
+  MAINTENANCE
+  RETIRED
+}
+
+enum DispatchStatus {
+  SEARCHING
+  RIDER_ACCEPTED
+  COMPLETED
+  EXPIRED
+  CANCELLED
+}
+
+enum DispatchAttemptStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  TIMEOUT
+}
+
+enum StationStatus {
+  ACTIVE
+  INACTIVE
+  CLOSED
+}
+
+enum StationParcelStatus {
+  ARRIVED
+  STORED
+  READY_FOR_COLLECTION
+  COLLECTED
+  RETURNED
+}
+
+enum PickupCodeStatus {
+  ACTIVE
+  USED
+  EXPIRED
+}
+
+enum SettlementStatus {
+  PENDING
+  PROCESSED
+  PAID
+  CANCELLED
+}
+
+enum SettlementItemType {
+  RIDER_PAYMENT
+  STATION_COMMISSION
+  COMPANY_EARNING
+  PLATFORM_FEE
+}
+
+model Address {
+  id        String  @id @default(uuid())
+  street    String?
+  city      String?
+  state     String?
+  country   String?
+  latitude  Float?
+  longitude Float?
+
+  organizations  Organization[]
+  recipients     Recipient[]
+  pickup_orders  Order[]         @relation("PickupAddress")
+  pickup_stations PickupStation[]
+
+  @@map("addresses")
+}
+
+model User {
+  id            String     @id @default(uuid())
+  email         String?    @unique
+  phone         String?    @unique
+  password_hash String?
+  first_name    String
+  last_name     String
+  avatar        String?
+  status        UserStatus @default(ACTIVE)
+  is_verified   Boolean    @default(false)
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+
+  organization_members  OrganizationMember[]
+  consumer              Consumer?
+  rider                 Rider?
+  pickup_verification_logs PickupVerificationLog[]
+
+  @@map("users")
+}
+
+model Organization {
+  id                  String             @id @default(uuid())
+  name                String
+  type                OrganizationType
+  status              OrganizationStatus @default(ACTIVE)
+  verification_status VerificationStatus @default(UNVERIFIED)
+  address_id          String?
+  address             Address?           @relation(fields: [address_id], references: [id])
+  created_at          DateTime           @default(now())
+
+  members           OrganizationMember[]
+  merchant_profiles MerchantProfile[]
+  riders            Rider[]
+  vehicles          Vehicle[]
+  pickup_stations   PickupStation[]
+  settlements       Settlement[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id              String       @id @default(uuid())
+  organization_id String
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user_id         String
+  user            User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  role            String
+  status          String       @default("ACTIVE")
+  created_at      DateTime     @default(now())
+
+  @@unique([organization_id, user_id])
+  @@map("organization_members")
+}
+
+model Consumer {
+  id         String       @id @default(uuid())
+  user_id    String       @unique
+  user       User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  type       ConsumerType
+  created_at DateTime     @default(now())
+
+  merchant_profile MerchantProfile?
+  recipients       Recipient[]
+  orders           Order[]
+
+  @@map("consumers")
+}
+
+model MerchantProfile {
+  id                String       @id @default(uuid())
+  consumer_id       String       @unique
+  consumer          Consumer     @relation(fields: [consumer_id], references: [id], onDelete: Cascade)
+  organization_id   String
+  organization      Organization @relation(fields: [organization_id], references: [id])
+  business_name     String
+  category          String?
+  registration_number String?
+
+  @@map("merchant_profiles")
+}
+
+model Recipient {
+  id          String   @id @default(uuid())
+  consumer_id String
+  consumer    Consumer @relation(fields: [consumer_id], references: [id], onDelete: Cascade)
+  name        String
+  phone       String
+  address_id  String?
+  address     Address? @relation(fields: [address_id], references: [id])
+  created_at  DateTime @default(now())
+
+  orders Order[]
+
+  @@map("recipients")
+}
+
+model Rider {
+  id              String             @id @default(uuid())
+  user_id         String             @unique
+  user            User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  organization_id String?
+  organization    Organization?      @relation(fields: [organization_id], references: [id])
+  type            RiderType
+  vehicle_type    String?
+  status          RiderAccountStatus @default(ACTIVE)
+  rating          Float?
+  created_at      DateTime           @default(now())
+
+  availability        RiderAvailability?
+  vehicle_assignments RiderVehicle[]
+  dispatch_attempts   DispatchAttempt[]
+  assigned_dispatches Dispatch[]        @relation("AssignedRider")
+  location_history    RiderLocationHistory[]
+  earning_records     RiderEarningRecord[]
+
+  @@map("riders")
+}
+
+model RiderLocationHistory {
+  id        String   @id @default(uuid())
+  rider_id  String
+  rider     Rider    @relation(fields: [rider_id], references: [id], onDelete: Cascade)
+  latitude  Float
+  longitude Float
+  timestamp DateTime @default(now())
+
+  @@index([rider_id, timestamp])
+  @@map("rider_location_history")
+}
+
+model FinancialAccount {
+  id         String   @id @default(uuid())
+  owner_type String
+  owner_id   String
+  balance    Float    @default(0)
+  currency   String   @default("NGN")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([owner_type, owner_id])
+  @@map("financial_accounts")
+}
+
+model RiderEarningRecord {
+  id             String   @id @default(uuid())
+  rider_id       String
+  rider          Rider    @relation(fields: [rider_id], references: [id])
+  order_id       String
+  order          Order    @relation(fields: [order_id], references: [id])
+  amount         Float
+  payment_source String
+  created_at     DateTime @default(now())
+
+  @@map("rider_earning_records")
+}
+
+model Payment {
+  id                String   @id @default(uuid())
+  order_id          String?
+  order             Order?   @relation(fields: [order_id], references: [id])
+  amount            Float
+  provider          String
+  provider_reference String?
+  status            String
+  metadata          Json?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  @@map("payments")
+}
+
+model Settlement {
+  id              String           @id @default(uuid())
+  organization_id String
+  organization    Organization     @relation(fields: [organization_id], references: [id])
+  amount          Float
+  status          SettlementStatus @default(PENDING)
+  period          String?
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
+
+  items SettlementItem[]
+
+  @@map("settlements")
+}
+
+model SettlementItem {
+  id            String             @id @default(uuid())
+  settlement_id String
+  settlement    Settlement         @relation(fields: [settlement_id], references: [id], onDelete: Cascade)
+  order_id      String
+  order         Order              @relation(fields: [order_id], references: [id])
+  amount        Float
+  type          SettlementItemType
+  created_at    DateTime           @default(now())
+
+  @@map("settlement_items")
+}
+
+model RiderAvailability {
+  id          String             @id @default(uuid())
+  rider_id    String             @unique
+  rider       Rider              @relation(fields: [rider_id], references: [id], onDelete: Cascade)
+  status      AvailabilityStatus @default(OFFLINE)
+  latitude    Float?
+  longitude   Float?
+  last_seen_at DateTime           @default(now())
+
+  @@map("rider_availability")
+}
+
+model Vehicle {
+  id              String        @id @default(uuid())
+  organization_id String
+  organization    Organization  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  type            String
+  plate_number    String?
+  capacity        Int?
+  status          VehicleStatus @default(ACTIVE)
+  created_at      DateTime      @default(now())
+
+  assignments RiderVehicle[]
+
+  @@map("vehicles")
+}
+
+model RiderVehicle {
+  id          String   @id @default(uuid())
+  rider_id    String
+  rider       Rider    @relation(fields: [rider_id], references: [id], onDelete: Cascade)
+  vehicle_id  String
+  vehicle     Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  assigned_at DateTime @default(now())
+  ended_at    DateTime?
+
+  @@map("rider_vehicles")
+}
+
+model DeliveryOption {
+  id   String             @id @default(uuid())
+  type DeliveryOptionType @unique
+
+  orders Order[]
+
+  @@map("delivery_options")
+}
+
+model Order {
+  id                 String        @id @default(uuid())
+  tracking_number    String        @unique
+  consumer_id        String
+  consumer           Consumer      @relation(fields: [consumer_id], references: [id])
+  delivery_option_id String
+  delivery_option    DeliveryOption @relation(fields: [delivery_option_id], references: [id])
+  pickup_address_id  String
+  pickup_address     Address       @relation("PickupAddress", fields: [pickup_address_id], references: [id])
+  recipient_id       String
+  recipient          Recipient     @relation(fields: [recipient_id], references: [id])
+  status             OrderStatus   @default(CREATED)
+  price              Float
+  payment_status     PaymentStatus @default(PENDING)
+  created_at         DateTime      @default(now())
+
+  pickup_station_id String?
+  pickup_station    PickupStation?      @relation(fields: [pickup_station_id], references: [id])
+  events            OrderEvent[]
+  dispatch          Dispatch?
+  station_parcels   StationParcel[]
+  pickup_codes      PickupCode[]
+  pickup_verification_logs PickupVerificationLog[]
+  rider_earning_records   RiderEarningRecord[]
+  payments                Payment[]
+  settlement_items        SettlementItem[]
+
+  @@map("orders")
+}
+
+model OrderEvent {
+  id         String   @id @default(uuid())
+  order_id   String
+  order      Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  event_type String
+  metadata   Json?
+  created_at DateTime @default(now())
+
+  @@map("order_events")
+}
+
+model Dispatch {
+  id               String        @id @default(uuid())
+  order_id         String        @unique
+  order            Order         @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  assigned_rider_id String?
+  assigned_rider   Rider?        @relation("AssignedRider", fields: [assigned_rider_id], references: [id])
+  status           DispatchStatus @default(SEARCHING)
+  created_at       DateTime      @default(now())
+
+  attempts DispatchAttempt[]
+
+  @@map("dispatches")
+}
+
+model DispatchAttempt {
+  id            String               @id @default(uuid())
+  dispatch_id   String
+  dispatch      Dispatch             @relation(fields: [dispatch_id], references: [id], onDelete: Cascade)
+  rider_id      String
+  rider         Rider                @relation(fields: [rider_id], references: [id])
+  status        DispatchAttemptStatus @default(PENDING)
+  response_time Int?
+  created_at    DateTime              @default(now())
+
+  @@unique([dispatch_id, rider_id])
+  @@map("dispatch_attempts")
+}
+
+model PickupStation {
+  id              String        @id @default(uuid())
+  organization_id String
+  organization    Organization  @relation(fields: [organization_id], references: [id])
+  address_id      String?
+  address         Address?      @relation(fields: [address_id], references: [id])
+  name            String
+  capacity        Int?
+  status          StationStatus @default(ACTIVE)
+  opening_hours   String?
+  created_at      DateTime      @default(now())
+
+  station_parcels           StationParcel[]
+  pickup_verification_logs  PickupVerificationLog[]
+  orders                    Order[]
+
+  @@map("pickup_stations")
+}
+
+model StationParcel {
+  id         String             @id @default(uuid())
+  station_id String
+  station    PickupStation      @relation(fields: [station_id], references: [id])
+  order_id   String             @unique
+  order      Order              @relation(fields: [order_id], references: [id])
+  status     StationParcelStatus
+  received_at DateTime          @default(now())
+
+  @@map("station_parcels")
+}
+
+model PickupCode {
+  id         String           @id @default(uuid())
+  order_id   String           @unique
+  order      Order            @relation(fields: [order_id], references: [id])
+  code_hash  String
+  qr_token   String?
+  expires_at DateTime
+  status     PickupCodeStatus @default(ACTIVE)
+  created_at DateTime         @default(now())
+
+  @@map("pickup_codes")
+}
+
+model PickupVerificationLog {
+  id          String         @id @default(uuid())
+  order_id    String
+  order       Order          @relation(fields: [order_id], references: [id])
+  station_id  String
+  station     PickupStation  @relation(fields: [station_id], references: [id])
+  verified_by String
+  verifier    User           @relation(fields: [verified_by], references: [id])
+  method      String
+  result      String
+  created_at  DateTime       @default(now())
+
+  @@map("pickup_verification_logs")
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid())
+  user_id    String
+  token      String   @unique
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
+model OtpCode {
+  id         String   @id @default(uuid())
+  identifier String
+  code       String
+  purpose    String
+  expires_at DateTime
+  used       Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  @@index([identifier, purpose])
+  @@map("otp_codes")
+}
