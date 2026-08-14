@@ -13,6 +13,20 @@ enum UserStatus {
   BANNED
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum NotificationType {
+  ORDER_UPDATE
+  DISPATCH_ALERT
+  PAYMENT_CONFIRMATION
+  DELIVERY_CONFIRMATION
+  PICKUP_CODE_READY
+  SYSTEM
+}
+
 enum OrganizationType {
   MERCHANT
   LOGISTICS_COMPANY
@@ -49,6 +63,7 @@ enum OrderStatus {
   ARRIVED_AT_STATION
   READY_FOR_COLLECTION
   COLLECTED
+  RETURNED
   FAILED
   CANCELLED
 }
@@ -97,6 +112,11 @@ enum DispatchStatus {
   CANCELLED
 }
 
+enum DispatchType {
+  DELIVERY
+  RETURN
+}
+
 enum DispatchAttemptStatus {
   PENDING
   ACCEPTED
@@ -138,6 +158,51 @@ enum SettlementItemType {
   PLATFORM_FEE
 }
 
+enum FinancialTransactionType {
+  FUNDING
+  RESERVATION
+  RESERVATION_RELEASE
+  RESERVATION_CONSUME
+  SETTLEMENT
+  FEE
+  WITHDRAWAL
+  WITHDRAWAL_REVERSAL
+  REFUND
+  ADJUSTMENT
+}
+
+enum FinancialTransactionDirection {
+  CREDIT
+  DEBIT
+}
+
+enum FinancialTransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum ReservationStatus {
+  ACTIVE
+  RELEASED
+  CONSUMED
+  EXPIRED
+}
+
+enum WithdrawalStatus {
+  REQUESTED
+  PROCESSING
+  SUCCESSFUL
+  FAILED
+  REVERSED
+}
+
+enum VirtualAccountStatus {
+  PENDING
+  ACTIVE
+  FAILED
+}
+
 model Address {
   id        String  @id @default(uuid())
   street    String?
@@ -147,9 +212,9 @@ model Address {
   latitude  Float?
   longitude Float?
 
-  organizations  Organization[]
-  recipients     Recipient[]
-  pickup_orders  Order[]         @relation("PickupAddress")
+  organizations   Organization[]
+  recipients      Recipient[]
+  pickup_orders   Order[]         @relation("PickupAddress")
   pickup_stations PickupStation[]
 
   @@map("addresses")
@@ -164,14 +229,17 @@ model User {
   last_name     String
   avatar        String?
   status        UserStatus @default(ACTIVE)
+  role          UserRole   @default(USER)
   is_verified   Boolean    @default(false)
   created_at    DateTime   @default(now())
   updated_at    DateTime   @updatedAt
 
-  organization_members  OrganizationMember[]
-  consumer              Consumer?
-  rider                 Rider?
+  organization_members     OrganizationMember[]
+  consumer                 Consumer?
+  rider                    Rider?
   pickup_verification_logs PickupVerificationLog[]
+  notifications            Notification[]
+  audit_logs               AuditLog[]
 
   @@map("users")
 }
@@ -192,6 +260,8 @@ model Organization {
   vehicles          Vehicle[]
   pickup_stations   PickupStation[]
   settlements       Settlement[]
+  api_keys          ApiKey[]
+  webhooks          Webhook[]
 
   @@map("organizations")
 }
@@ -220,18 +290,20 @@ model Consumer {
   merchant_profile MerchantProfile?
   recipients       Recipient[]
   orders           Order[]
+  rider_ratings    RiderRating[]
+  station_ratings  StationRating[]
 
   @@map("consumers")
 }
 
 model MerchantProfile {
-  id                String       @id @default(uuid())
-  consumer_id       String       @unique
-  consumer          Consumer     @relation(fields: [consumer_id], references: [id], onDelete: Cascade)
-  organization_id   String
-  organization      Organization @relation(fields: [organization_id], references: [id])
-  business_name     String
-  category          String?
+  id                  String       @id @default(uuid())
+  consumer_id         String       @unique
+  consumer            Consumer     @relation(fields: [consumer_id], references: [id], onDelete: Cascade)
+  organization_id     String
+  organization        Organization @relation(fields: [organization_id], references: [id])
+  business_name       String
+  category            String?
   registration_number String?
 
   @@map("merchant_profiles")
@@ -267,9 +339,10 @@ model Rider {
   availability        RiderAvailability?
   vehicle_assignments RiderVehicle[]
   dispatch_attempts   DispatchAttempt[]
-  assigned_dispatches Dispatch[]        @relation("AssignedRider")
+  assigned_dispatches Dispatch[]             @relation("AssignedRider")
   location_history    RiderLocationHistory[]
   earning_records     RiderEarningRecord[]
+  ratings             RiderRating[]
 
   @@map("riders")
 }
@@ -287,16 +360,143 @@ model RiderLocationHistory {
 }
 
 model FinancialAccount {
-  id         String   @id @default(uuid())
-  owner_type String
-  owner_id   String
-  balance    Float    @default(0)
-  currency   String   @default("NGN")
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id                String   @id @default(uuid())
+  owner_type        String
+  owner_id          String
+  balance           Float    @default(0)
+  available_balance BigInt   @default(0)
+  reserved_balance  BigInt   @default(0)
+  currency          String   @default("NGN")
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  transactions          FinancialTransaction[]
+  reservations          Reservation[]
+  virtual_account       ProviderVirtualAccount?
+  withdrawals           Withdrawal[]
+  provider_transactions ProviderTransaction[]
 
   @@unique([owner_type, owner_id])
   @@map("financial_accounts")
+}
+
+model Reservation {
+  id          String            @id @default(uuid())
+  account_id  String
+  account     FinancialAccount  @relation(fields: [account_id], references: [id])
+  order_id    String            @unique
+  order       Order             @relation(fields: [order_id], references: [id])
+  amount_kobo BigInt
+  status      ReservationStatus @default(ACTIVE)
+  created_at  DateTime          @default(now())
+  closed_at   DateTime?
+
+  transactions FinancialTransaction[]
+
+  @@index([account_id])
+  @@index([status])
+  @@map("reservations")
+}
+
+model FinancialTransaction {
+  id                      String                        @id @default(uuid())
+  account_id              String
+  account                 FinancialAccount              @relation(fields: [account_id], references: [id])
+  type                    FinancialTransactionType
+  direction               FinancialTransactionDirection
+  amount_kobo             BigInt
+  available_balance_after BigInt
+  reserved_balance_after  BigInt
+  currency                String                        @default("NGN")
+  status                  FinancialTransactionStatus    @default(COMPLETED)
+  reference               String                        @unique
+  source                  String
+  order_id                String?
+  order                   Order?                        @relation(fields: [order_id], references: [id])
+  reservation_id          String?
+  reservation             Reservation?                  @relation(fields: [reservation_id], references: [id])
+  withdrawal_id           String?
+  withdrawal              Withdrawal?                @relation("WithdrawalTransactions", fields: [withdrawal_id], references: [id])
+  provider_reference      String?
+  metadata                Json?
+  created_at              DateTime                      @default(now())
+
+  provider_transaction ProviderTransaction? @relation("ProviderTxLedger")
+
+  @@index([account_id, created_at])
+  @@map("financial_transactions")
+}
+
+model ProviderVirtualAccount {
+  id                      String               @id @default(uuid())
+  financial_account_id    String               @unique
+  financial_account       FinancialAccount     @relation(fields: [financial_account_id], references: [id])
+  provider                String               @default("MONNIFY")
+  account_reference       String               @unique
+  account_number          String
+  account_name            String
+  bank_name               String?
+  currency                String               @default("NGN")
+  provider_customer_email String?
+  status                  VirtualAccountStatus @default(PENDING)
+  metadata                Json?
+  created_at              DateTime             @default(now())
+  updated_at              DateTime             @updatedAt
+
+  provider_transactions ProviderTransaction[]
+
+  @@map("provider_virtual_accounts")
+}
+
+model ProviderTransaction {
+  id                            String                  @id @default(uuid())
+  provider                      String                  @default("MONNIFY")
+  monnify_transaction_reference String                  @unique
+  payment_reference             String?
+  amount_kobo                   BigInt?
+  currency                      String?
+  transaction_status            String?
+  settlement_status             String?
+  payment_method                String?
+  account_number                String?
+  bank_name                     String?
+  financial_account_id          String?
+  financial_account             FinancialAccount?       @relation(fields: [financial_account_id], references: [id])
+  provider_virtual_account_id   String?
+  provider_virtual_account      ProviderVirtualAccount? @relation(fields: [provider_virtual_account_id], references: [id])
+  financial_transaction_id      String?                 @unique
+  financial_transaction         FinancialTransaction?   @relation("ProviderTxLedger", fields: [financial_transaction_id], references: [id])
+  processed                     Boolean                 @default(false)
+  payload                       Json
+  processed_at                  DateTime?
+  created_at                    DateTime                @default(now())
+
+  @@index([financial_account_id])
+  @@map("provider_transactions")
+}
+
+model Withdrawal {
+  id                             String                @id @default(uuid())
+  account_id                     String
+  account                        FinancialAccount      @relation(fields: [account_id], references: [id])
+  amount_kobo                    BigInt
+  status                         WithdrawalStatus      @default(REQUESTED)
+  provider_reference             String?               @unique
+  provider_transaction_reference String?               @unique
+  destination_bank_code          String
+  destination_account_number     String
+  destination_account_name       String
+  destination_bank_name          String?
+  narration                      String?
+  failure_reason                 String?
+  requested_by                   String?
+  financial_transactions         FinancialTransaction[] @relation("WithdrawalTransactions")
+  created_at                     DateTime              @default(now())
+  processed_at                   DateTime?
+  updated_at                     DateTime              @updatedAt
+
+  @@index([account_id])
+  @@map("withdrawals")
 }
 
 model RiderEarningRecord {
@@ -313,16 +513,16 @@ model RiderEarningRecord {
 }
 
 model Payment {
-  id                String   @id @default(uuid())
-  order_id          String?
-  order             Order?   @relation(fields: [order_id], references: [id])
-  amount            Float
-  provider          String
+  id                 String   @id @default(uuid())
+  order_id           String?
+  order              Order?   @relation(fields: [order_id], references: [id])
+  amount             Float
+  provider           String
   provider_reference String?
-  status            String
-  metadata          Json?
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+  status             String
+  metadata           Json?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
 
   @@map("payments")
 }
@@ -356,12 +556,12 @@ model SettlementItem {
 }
 
 model RiderAvailability {
-  id          String             @id @default(uuid())
-  rider_id    String             @unique
-  rider       Rider              @relation(fields: [rider_id], references: [id], onDelete: Cascade)
-  status      AvailabilityStatus @default(OFFLINE)
-  latitude    Float?
-  longitude   Float?
+  id           String             @id @default(uuid())
+  rider_id     String             @unique
+  rider        Rider              @relation(fields: [rider_id], references: [id], onDelete: Cascade)
+  status       AvailabilityStatus @default(OFFLINE)
+  latitude     Float?
+  longitude    Float?
   last_seen_at DateTime           @default(now())
 
   @@map("rider_availability")
@@ -383,12 +583,12 @@ model Vehicle {
 }
 
 model RiderVehicle {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   rider_id    String
-  rider       Rider    @relation(fields: [rider_id], references: [id], onDelete: Cascade)
+  rider       Rider     @relation(fields: [rider_id], references: [id], onDelete: Cascade)
   vehicle_id  String
-  vehicle     Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
-  assigned_at DateTime @default(now())
+  vehicle     Vehicle   @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  assigned_at DateTime  @default(now())
   ended_at    DateTime?
 
   @@map("rider_vehicles")
@@ -404,31 +604,35 @@ model DeliveryOption {
 }
 
 model Order {
-  id                 String        @id @default(uuid())
-  tracking_number    String        @unique
+  id                 String         @id @default(uuid())
+  tracking_number    String         @unique
   consumer_id        String
-  consumer           Consumer      @relation(fields: [consumer_id], references: [id])
+  consumer           Consumer       @relation(fields: [consumer_id], references: [id])
   delivery_option_id String
   delivery_option    DeliveryOption @relation(fields: [delivery_option_id], references: [id])
   pickup_address_id  String
-  pickup_address     Address       @relation("PickupAddress", fields: [pickup_address_id], references: [id])
+  pickup_address     Address        @relation("PickupAddress", fields: [pickup_address_id], references: [id])
   recipient_id       String
-  recipient          Recipient     @relation(fields: [recipient_id], references: [id])
-  status             OrderStatus   @default(CREATED)
+  recipient          Recipient      @relation(fields: [recipient_id], references: [id])
+  status             OrderStatus    @default(CREATED)
   price              Float
-  payment_status     PaymentStatus @default(PENDING)
-  created_at         DateTime      @default(now())
+  payment_status     PaymentStatus  @default(PENDING)
+  created_at         DateTime       @default(now())
 
-  pickup_station_id String?
-  pickup_station    PickupStation?      @relation(fields: [pickup_station_id], references: [id])
-  events            OrderEvent[]
-  dispatch          Dispatch?
-  station_parcels   StationParcel[]
-  pickup_codes      PickupCode[]
+  pickup_station_id        String?
+  pickup_station           PickupStation?          @relation(fields: [pickup_station_id], references: [id])
+  events                   OrderEvent[]
+  dispatch                 Dispatch?
+  station_parcels          StationParcel[]
+  pickup_codes             PickupCode[]
   pickup_verification_logs PickupVerificationLog[]
-  rider_earning_records   RiderEarningRecord[]
-  payments                Payment[]
-  settlement_items        SettlementItem[]
+  rider_earning_records    RiderEarningRecord[]
+  payments                 Payment[]
+  settlement_items         SettlementItem[]
+  reservation              Reservation?
+  financial_transactions   FinancialTransaction[]
+  rider_rating             RiderRating?
+  station_rating           StationRating?
 
   @@map("orders")
 }
@@ -445,13 +649,14 @@ model OrderEvent {
 }
 
 model Dispatch {
-  id               String        @id @default(uuid())
-  order_id         String        @unique
-  order            Order         @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  id                String         @id @default(uuid())
+  order_id          String         @unique
+  order             Order          @relation(fields: [order_id], references: [id], onDelete: Cascade)
   assigned_rider_id String?
-  assigned_rider   Rider?        @relation("AssignedRider", fields: [assigned_rider_id], references: [id])
-  status           DispatchStatus @default(SEARCHING)
-  created_at       DateTime      @default(now())
+  assigned_rider    Rider?         @relation("AssignedRider", fields: [assigned_rider_id], references: [id])
+  status            DispatchStatus @default(SEARCHING)
+  type              DispatchType   @default(DELIVERY)
+  created_at        DateTime       @default(now())
 
   attempts DispatchAttempt[]
 
@@ -459,11 +664,11 @@ model Dispatch {
 }
 
 model DispatchAttempt {
-  id            String               @id @default(uuid())
+  id            String                @id @default(uuid())
   dispatch_id   String
-  dispatch      Dispatch             @relation(fields: [dispatch_id], references: [id], onDelete: Cascade)
+  dispatch      Dispatch              @relation(fields: [dispatch_id], references: [id], onDelete: Cascade)
   rider_id      String
-  rider         Rider                @relation(fields: [rider_id], references: [id])
+  rider         Rider                 @relation(fields: [rider_id], references: [id])
   status        DispatchAttemptStatus @default(PENDING)
   response_time Int?
   created_at    DateTime              @default(now())
@@ -484,21 +689,22 @@ model PickupStation {
   opening_hours   String?
   created_at      DateTime      @default(now())
 
-  station_parcels           StationParcel[]
-  pickup_verification_logs  PickupVerificationLog[]
-  orders                    Order[]
+  station_parcels          StationParcel[]
+  pickup_verification_logs PickupVerificationLog[]
+  orders                   Order[]
+  ratings                  StationRating[]
 
   @@map("pickup_stations")
 }
 
 model StationParcel {
-  id         String             @id @default(uuid())
-  station_id String
-  station    PickupStation      @relation(fields: [station_id], references: [id])
-  order_id   String             @unique
-  order      Order              @relation(fields: [order_id], references: [id])
-  status     StationParcelStatus
-  received_at DateTime          @default(now())
+  id          String              @id @default(uuid())
+  station_id  String
+  station     PickupStation       @relation(fields: [station_id], references: [id])
+  order_id    String              @unique
+  order       Order               @relation(fields: [order_id], references: [id])
+  status      StationParcelStatus
+  received_at DateTime            @default(now())
 
   @@map("station_parcels")
 }
@@ -517,16 +723,16 @@ model PickupCode {
 }
 
 model PickupVerificationLog {
-  id          String         @id @default(uuid())
+  id          String        @id @default(uuid())
   order_id    String
-  order       Order          @relation(fields: [order_id], references: [id])
+  order       Order         @relation(fields: [order_id], references: [id])
   station_id  String
-  station     PickupStation  @relation(fields: [station_id], references: [id])
+  station     PickupStation @relation(fields: [station_id], references: [id])
   verified_by String
-  verifier    User           @relation(fields: [verified_by], references: [id])
+  verifier    User          @relation(fields: [verified_by], references: [id])
   method      String
   result      String
-  created_at  DateTime       @default(now())
+  created_at  DateTime      @default(now())
 
   @@map("pickup_verification_logs")
 }
@@ -552,4 +758,114 @@ model OtpCode {
 
   @@index([identifier, purpose])
   @@map("otp_codes")
+}
+
+model Notification {
+  id         String           @id @default(uuid())
+  user_id    String
+  user       User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  type       NotificationType
+  title      String
+  message    String
+  read_at    DateTime?
+  created_at DateTime         @default(now())
+
+  @@index([user_id, created_at])
+  @@map("notifications")
+}
+
+model RiderRating {
+  id          String   @id @default(uuid())
+  rider_id    String
+  rider       Rider    @relation(fields: [rider_id], references: [id], onDelete: Cascade)
+  consumer_id String
+  consumer    Consumer @relation(fields: [consumer_id], references: [id], onDelete: Cascade)
+  order_id    String   @unique
+  order       Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  rating      Int
+  comment     String?
+  created_at  DateTime @default(now())
+
+  @@index([rider_id, created_at])
+  @@map("rider_ratings")
+}
+
+model StationRating {
+  id          String        @id @default(uuid())
+  station_id  String
+  station     PickupStation @relation(fields: [station_id], references: [id], onDelete: Cascade)
+  consumer_id String
+  consumer    Consumer      @relation(fields: [consumer_id], references: [id], onDelete: Cascade)
+  order_id    String        @unique
+  order       Order         @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  rating      Int
+  comment     String?
+  created_at  DateTime      @default(now())
+
+  @@index([station_id, created_at])
+  @@map("station_ratings")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actor_id   String?
+  actor      User?    @relation(fields: [actor_id], references: [id], onDelete: SetNull)
+  action     String
+  entity     String
+  entity_id  String?
+  metadata   Json?
+  ip_address String?
+  user_agent String?
+  created_at DateTime @default(now())
+
+  @@index([entity, entity_id])
+  @@index([created_at])
+  @@map("audit_logs")
+}
+
+model ApiKey {
+  id              String       @id @default(uuid())
+  organization_id String
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  name            String
+  key_hash        String       @unique
+  prefix          String
+  permissions     Json?
+  expires_at      DateTime?
+  revoked_at      DateTime?
+  created_at      DateTime     @default(now())
+
+  @@index([organization_id])
+  @@map("api_keys")
+}
+
+model Webhook {
+  id              String       @id @default(uuid())
+  organization_id String
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  url             String
+  secret          String?
+  events          Json
+  active          Boolean      @default(true)
+  created_at      DateTime     @default(now())
+
+  webhook_deliveries WebhookDelivery[]
+
+  @@index([organization_id])
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id          String   @id @default(uuid())
+  webhook_id  String
+  webhook     Webhook  @relation(fields: [webhook_id], references: [id], onDelete: Cascade)
+  event       String
+  payload     Json
+  status_code Int?
+  error       String?
+  attempts    Int      @default(0)
+  created_at  DateTime @default(now())
+
+  @@index([webhook_id, created_at])
+  @@map("webhook_deliveries")
 }

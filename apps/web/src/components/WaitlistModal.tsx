@@ -76,7 +76,7 @@ export function WaitlistModal() {
                     You're on the list!
                   </h3>
                   <p className="text-sm text-gray-400 dark:text-gray-600">
-                    We'll notify you when Zendbox launches.
+                    We'll notify you when Xendbox launches.
                   </p>
                 </div>
               ) : (

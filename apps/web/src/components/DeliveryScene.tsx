@@ -50,7 +50,7 @@ const cards = [
   },
 ]
 
-export function LogisticsScene() {
+export function DeliveryScene() {
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-start">
       {/* Deep glow behind image */}
@@ -71,8 +71,8 @@ export function LogisticsScene() {
         <div className="relative rounded-[20px] overflow-hidden shadow-[0_0_80px_-30px_rgba(255,90,31,0.35)]">
           <div className="absolute inset-0 bg-gradient-to-t from-dark/5 via-transparent to-transparent pointer-events-none" />
           <img
-            src="/logistics.png"
-            alt="Zendbox delivery logistics"
+            src="/delivery.png"
+            alt="Xendbox delivery"
             className="w-full h-auto block"
           />
         </div>

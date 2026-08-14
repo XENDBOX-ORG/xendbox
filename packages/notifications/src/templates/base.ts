@@ -105,7 +105,7 @@ export function renderEmailTemplate(props: TemplateProps): { html: string; text:
             <path d="M8 16L14 22L24 10" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </span>
-        <span class="logo-text" style="font-size: 22px;">Zendbox</span>
+        <span class="logo-text" style="font-size: 22px;">Xendbox</span>
       </a>
     </div>
 
@@ -126,17 +126,17 @@ export function renderEmailTemplate(props: TemplateProps): { html: string; text:
 
     <!-- Footer -->
     <div style="${footerStyle}">
-      <p style="margin: 0 0 4px;">&copy; ${new Date().getFullYear()} Zendbox Africa. All rights reserved.</p>
+      <p style="margin: 0 0 4px;">&copy; ${new Date().getFullYear()} Xendbox Africa. All rights reserved.</p>
       <p style="margin: 0;">Lagos, Nigeria &bull; AI-Native Delivery Infrastructure for Africa</p>
       <p style="margin: 8px 0 0; font-size: 12px;">
-        You received this because you signed up for Zendbox.
+        You received this because you signed up for Xendbox.
       </p>
     </div>
   </div>
 </body>
 </html>`
 
-  const text = `${title}\n\n${greeting}\n\n${body.replace(/<[^>]*>/g, '')}${button ? `\n\n${button.text}: ${button.url}` : ''}\n\n\u2014 Zendbox Team`
+  const text = `${title}\n\n${greeting}\n\n${body.replace(/<[^>]*>/g, '')}${button ? `\n\n${button.text}: ${button.url}` : ''}\n\n\u2014 Xendbox Team`
 
   return { html, text }
 }

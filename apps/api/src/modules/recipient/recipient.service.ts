@@ -1,5 +1,5 @@
 import { prisma } from "@xendbox/database"
-import { AppError } from "../identity/auth.service"
+import { AppError } from "../../shared/errors"
 
 export async function createRecipient(
   consumerId: string,
@@ -18,7 +18,7 @@ export async function createRecipient(
 ) {
   const recipient = await prisma.recipient.create({
     data: {
-      consumer_id: consumerId,
+      consumer: { connect: { id: consumerId } },
       name: data.name,
       phone: data.phone,
       address: data.address

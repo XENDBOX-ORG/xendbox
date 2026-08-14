@@ -1,5 +1,5 @@
 import { prisma } from "@xendbox/database"
-import { AppError } from "./auth.service"
+import { AppError } from "../../shared/errors"
 
 export async function getUserById(userId: string) {
   const user = await prisma.user.findUnique({

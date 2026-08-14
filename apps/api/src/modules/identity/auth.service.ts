@@ -6,9 +6,9 @@ import {
   generateOtpCode,
   getOtpExpiry,
   getRefreshExpiry,
-  verifyAccessToken,
 } from "@xendbox/auth"
 import type { AuthTokens } from "@xendbox/types"
+import { AppError } from "../../shared/errors"
 
 export async function registerUser(data: {
   email?: string
@@ -157,14 +157,4 @@ export async function verifyOtp(identifier: string, code: string) {
   })
 
   return { message: "OTP verified" }
-}
-
-export class AppError extends Error {
-  constructor(
-    message: string,
-    public status: number
-  ) {
-    super(message)
-    this.name = "AppError"
-  }
 }

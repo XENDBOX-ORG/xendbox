@@ -3,9 +3,16 @@ import bcrypt from "bcryptjs"
 import crypto from "node:crypto"
 import type { JwtPayload, AuthTokens } from "@xendbox/types"
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-in-production"
-const JWT_EXPIRES_IN = "15m"
-const REFRESH_EXPIRES_IN = "7d"
+function requireEnv(name: string): string {
+  const value = process.env[name]
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`)
+  }
+  return value
+}
+
+const JWT_SECRET = requireEnv("JWT_SECRET")
+const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "15m") as jwt.SignOptions["expiresIn"]
 const REFRESH_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000
 const BCRYPT_ROUNDS = 12
 const OTP_LENGTH = 6

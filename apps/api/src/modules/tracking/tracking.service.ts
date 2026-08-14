@@ -1,5 +1,6 @@
 import { prisma } from "@xendbox/database"
-import { AppError } from "../identity/auth.service"
+import { AppError } from "../../shared/errors"
+import { geoAddRider } from "@xendbox/maps"
 
 export async function updateLocation(
   riderId: string,
@@ -23,6 +24,8 @@ export async function updateLocation(
       },
     }),
   ])
+
+  await geoAddRider(riderId, data.latitude, data.longitude)
 
   return { message: "Location updated" }
 }

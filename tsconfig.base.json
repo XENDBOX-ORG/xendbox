@@ -5,28 +5,30 @@
     "moduleResolution": "Bundler",
     "strict": true,
     "skipLibCheck": true,
-    "baseUrl": ".",
     "paths": {
       "@xendbox/database": [
-        "packages/database/src"
+        "./packages/database/src"
       ],
       "@xendbox/shared": [
-        "packages/shared/src"
+        "./packages/shared/src"
       ],
       "@xendbox/types": [
-        "packages/types/src"
+        "./packages/types/src"
       ],
       "@xendbox/validation": [
-        "packages/validation/src"
+        "./packages/validation/src"
       ],
       "@xendbox/auth": [
-        "packages/auth/src"
+        "./packages/auth/src"
       ],
       "@xendbox/maps": [
-        "packages/maps/src"
+        "./packages/maps/src"
+      ],
+      "@xendbox/redis": [
+        "./packages/redis/src"
       ],
       "@xendbox/notifications": [
-        "packages/notifications/src"
+        "./packages/notifications/src"
       ]
     }
   }

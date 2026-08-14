@@ -1,14 +1,18 @@
 import { Hono } from "hono"
 import { authMiddleware } from "../../shared/middleware/auth"
+import { requireOrgMember, assertOrgAccess } from "../../shared/middleware/org"
+import { getParam } from "../../shared/params"
+import { parseBody, parseQuery } from "../../shared/validate"
 import { generateSettlement, listSettlements, getSettlement } from "./settlement.service"
-import { AppError } from "../identity/auth.service"
+import { generateSettlementSchema, orgIdQuerySchema } from "@xendbox/validation"
+import { AppError } from "../../shared/errors"
 
 const settlements = new Hono()
 
-settlements.post("/organizations/:orgId/generate", authMiddleware, async (c) => {
+settlements.post("/organizations/:orgId/generate", authMiddleware, requireOrgMember, async (c) => {
   try {
-    const { period } = await c.req.json()
-    const settlement = await generateSettlement(c.req.param("orgId"), period)
+    const { period } = await parseBody(c, generateSettlementSchema)
+    const settlement = await generateSettlement(getParam(c, "orgId"), period)
     return c.json(settlement, 201)
   } catch (e) {
     if (e instanceof AppError) return c.json({ error: e.message }, e.status)
@@ -16,9 +20,9 @@ settlements.post("/organizations/:orgId/generate", authMiddleware, async (c) => 
   }
 })
 
-settlements.get("/organizations/:orgId", authMiddleware, async (c) => {
+settlements.get("/organizations/:orgId", authMiddleware, requireOrgMember, async (c) => {
   try {
-    const list = await listSettlements(c.req.param("orgId"))
+    const list = await listSettlements(getParam(c, "orgId"))
     return c.json(list)
   } catch (e) {
     if (e instanceof AppError) return c.json({ error: e.message }, e.status)
@@ -28,9 +32,9 @@ settlements.get("/organizations/:orgId", authMiddleware, async (c) => {
 
 settlements.get("/:id", authMiddleware, async (c) => {
   try {
-    const { orgId } = c.req.query()
-    if (!orgId) return c.json({ error: "orgId query param required" }, 400)
-    const settlement = await getSettlement(c.req.param("id"), orgId)
+    const { orgId } = await parseQuery(c, orgIdQuerySchema)
+    await assertOrgAccess(c.get("user").sub, orgId)
+    const settlement = await getSettlement(getParam(c, "id"), orgId)
     return c.json(settlement)
   } catch (e) {
     if (e instanceof AppError) return c.json({ error: e.message }, e.status)

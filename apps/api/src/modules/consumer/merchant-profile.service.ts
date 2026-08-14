@@ -1,5 +1,6 @@
 import { prisma } from "@xendbox/database"
-import { AppError } from "../identity/auth.service"
+import { AppError } from "../../shared/errors"
+import { sendWelcomeEmail } from "../../shared/notify"
 
 export async function createMerchantProfile(
   consumerId: string,
@@ -26,6 +27,12 @@ export async function createMerchantProfile(
     },
     include: { organization: true },
   })
+
+  const consumer = await prisma.consumer.findUnique({
+    where: { id: consumerId },
+    select: { user_id: true },
+  })
+  if (consumer) sendWelcomeEmail(consumer.user_id, "merchant")
 
   return profile
 }

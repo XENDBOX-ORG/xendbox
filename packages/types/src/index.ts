@@ -57,6 +57,7 @@ export enum OrderStatus {
   ARRIVED_AT_STATION = "ARRIVED_AT_STATION",
   READY_FOR_COLLECTION = "READY_FOR_COLLECTION",
   COLLECTED = "COLLECTED",
+  RETURNED = "RETURNED",
   FAILED = "FAILED",
   CANCELLED = "CANCELLED",
 }
@@ -103,6 +104,11 @@ export enum DispatchStatus {
   COMPLETED = "COMPLETED",
   EXPIRED = "EXPIRED",
   CANCELLED = "CANCELLED",
+}
+
+export enum DispatchType {
+  DELIVERY = "DELIVERY",
+  RETURN = "RETURN",
 }
 
 export enum DispatchAttemptStatus {

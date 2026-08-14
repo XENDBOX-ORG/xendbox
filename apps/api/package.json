@@ -3,27 +3,35 @@
   "version": "1.0.0",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts",
-    "build": "tsc"
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "start": "tsx --env-file=.env src/index.ts",
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.1",
     "@xendbox/auth": "*",
     "@xendbox/database": "*",
+    "@xendbox/maps": "^1.0.0",
     "@xendbox/notifications": "*",
+    "@xendbox/redis": "^1.0.0",
     "@xendbox/types": "*",
+    "@xendbox/validation": "*",
     "bcryptjs": "^2.4.3",
+    "bullmq": "^5.81.3",
     "hono": "^4.7.4",
     "jsonwebtoken": "^9.0.2",
-    "resend": "^4.2.0"
+    "resend": "^4.2.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.9.3",
     "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.7"
   },
   "private": true
 }

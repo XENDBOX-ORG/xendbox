@@ -9,7 +9,7 @@ const metrics = [
     label: 'Merchants',
     suffix: '+',
     Icon: Building2,
-    desc: 'Active merchants using Zendbox daily',
+    desc: 'Active merchants using Xendbox daily',
     gradient: 'from-brand-500/20 to-orange-500/10',
   },
   {
@@ -17,7 +17,7 @@ const metrics = [
     label: 'Deliveries',
     suffix: '+',
     Icon: PackageCheck,
-    desc: 'Deliveries completed across Lagos',
+    desc: 'Deliveries completed across the cities we serve',
     gradient: 'from-blue-500/20 to-cyan-500/10',
   },
   {
@@ -73,9 +73,11 @@ export function TrustMetrics() {
             Trust Metrics
           </p>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
-            Built for{' '}
-            <span className="text-gradient">reliability at scale</span>
+            <span className="text-gradient">Trusted to Operate at Scale</span>
           </h2>
+          <p className="mt-4 text-gray-400 dark:text-gray-600 text-lg max-w-xl mx-auto">
+            Delivering quality products faster than traditional delivery.
+          </p>
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-6 lg:gap-8">

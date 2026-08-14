@@ -5,38 +5,38 @@ import { Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react'
 
 const testimonials = [
   {
-    content: "Zendbox transformed how we handle deliveries. Our customers get their orders in under 30 minutes, and our operational costs dropped by 40%. It's a game-changer for Lagos e-commerce.",
+    content: "Xendbox transformed how we handle deliveries. Our customers get their orders in under 30 minutes, and our operational costs dropped by 40%. It's a game-changer for Lagos e-commerce.",
     author: 'Amara O.',
     role: 'Founder',
     company: 'ShopKulture',
     type: 'Merchant',
   },
   {
-    content: 'I make 3x more delivering with Zendbox than my previous job. The app is easy to use, payments are instant, and the support team is always available. Best decision I ever made.',
+    content: 'I make 3x more delivering with Xendbox than my previous job. The app is easy to use, payments are instant, and the support team is always available. Best decision I ever made.',
     author: 'Chidi E.',
     role: 'Delivery Rider',
-    company: 'Zendbox Rider Network',
+    company: 'Xendbox Rider Network',
     type: 'Rider',
   },
   {
-    content: 'I needed urgent documents delivered across town. Zendbox had a rider at my door in 4 minutes. Tracked everything live. Could not believe how seamless it was.',
+    content: 'I needed urgent documents delivered across town. Xendbox had a rider at my door in 4 minutes. Tracked everything live. Could not believe how seamless it was.',
     author: 'Tolu B.',
     role: 'Customer',
     company: 'Lagos',
     type: 'Customer',
   },
   {
-    content: 'Our restaurant uses Zendbox for all our deliveries. The AI dispatch means food arrives hot and customers are always happy. Our repeat orders have doubled.',
+    content: 'Our restaurant uses Xendbox for all our deliveries. The AI dispatch means food arrives hot and customers are always happy. Our repeat orders have doubled.',
     author: 'Kunle A.',
     role: 'Owner',
     company: 'Lagos Grille',
     type: 'Merchant',
   },
   {
-    content: 'The best part about riding with Zendbox is the instant payout feature. I finish my shift and my money is already in my wallet. No waiting, no hassle.',
+    content: 'The best part about riding with Xendbox is the instant payout feature. I finish my shift and my money is already in my wallet. No waiting, no hassle.',
     author: 'Fatima B.',
     role: 'Delivery Rider',
-    company: 'Zendbox Rider Network',
+    company: 'Xendbox Rider Network',
     type: 'Rider',
   },
 ]

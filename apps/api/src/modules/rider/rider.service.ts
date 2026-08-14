@@ -1,5 +1,7 @@
 import { prisma } from "@xendbox/database"
-import { AppError } from "../identity/auth.service"
+import { AppError } from "../../shared/errors"
+import { sendWelcomeEmail } from "../../shared/notify"
+import { geoAddRider, geoRemoveRider, geoFindNearby } from "@xendbox/maps"
 
 export async function createRider(
   userId: string,
@@ -46,6 +48,8 @@ export async function createRider(
       },
     },
   })
+
+  sendWelcomeEmail(userId, "rider")
 
   return rider
 }
@@ -109,6 +113,15 @@ export async function updateAvailability(
     },
   })
 
+  const isOnline = (data.status ?? availability.status) === "ONLINE"
+  if (data.latitude != null && data.longitude != null) {
+    if (isOnline) {
+      await geoAddRider(riderId, data.latitude, data.longitude)
+    } else {
+      await geoRemoveRider(riderId)
+    }
+  }
+
   return availability
 }
 
@@ -122,41 +135,17 @@ export async function getAvailability(riderId: string) {
 }
 
 export async function listNearbyRiders(latitude: number, longitude: number, radiusKm: number = 5) {
-  const riders = await prisma.riderAvailability.findMany({
-    where: {
-      status: "ONLINE",
-      latitude: { not: null },
-      longitude: { not: null },
-    },
+  const ids = await geoFindNearby(latitude, longitude, radiusKm)
+
+  if (ids.length === 0) return []
+
+  return prisma.rider.findMany({
+    where: { id: { in: ids } },
     include: {
-      rider: {
-        include: {
-          user: {
-            select: { id: true, first_name: true, last_name: true, phone: true },
-          },
-        },
+      user: {
+        select: { id: true, first_name: true, last_name: true, phone: true },
       },
+      availability: true,
     },
   })
-
-  return riders.filter((r) => {
-    if (r.latitude == null || r.longitude == null) return false
-    const dist = haversineDistance(latitude, longitude, r.latitude, r.longitude)
-    return dist <= radiusKm
-  })
-}
-
-function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371
-  const dLat = toRad(lat2 - lat1)
-  const dLon = toRad(lon2 - lon1)
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c
-}
-
-function toRad(deg: number): number {
-  return (deg * Math.PI) / 180
 }

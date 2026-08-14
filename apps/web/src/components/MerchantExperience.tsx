@@ -13,7 +13,7 @@ export function MerchantExperience() {
   const { ref, isVisible } = useScrollReveal()
 
   return (
-    <section ref={ref} className="relative py-20 sm:py-28 border-y border-white/5 dark:border-gray-200">
+    <section id="merchants" ref={ref} className="relative py-20 sm:py-28 border-y border-white/5 dark:border-gray-200 scroll-mt-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -26,7 +26,7 @@ export function MerchantExperience() {
           </p>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
             Powerful tools for{' '}
-            <span className="text-gradient">your business</span>
+            <span className="text-gradient">Merchants</span>
           </h2>
           <p className="mt-4 text-gray-400 dark:text-gray-600 text-lg">
             Everything you need to manage deliveries, track performance, and grow your operation.

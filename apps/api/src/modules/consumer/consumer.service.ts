@@ -1,5 +1,5 @@
 import { prisma } from "@xendbox/database"
-import { AppError } from "../identity/auth.service"
+import { AppError } from "../../shared/errors"
 
 export async function createConsumer(userId: string, type: "INDIVIDUAL" | "MERCHANT") {
   const existing = await prisma.consumer.findUnique({ where: { user_id: userId } })

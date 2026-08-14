@@ -29,7 +29,7 @@ export interface SendResult {
 }
 
 export async function sendEmail(params: SendEmailParams): Promise<SendResult> {
-  const from = params.from || process.env.FROM_EMAIL || 'Zendbox <onboarding@resend.dev>'
+  const from = params.from || process.env.FROM_EMAIL || 'Xendbox <onboarding@resend.dev>'
 
   try {
     const client = getResend()

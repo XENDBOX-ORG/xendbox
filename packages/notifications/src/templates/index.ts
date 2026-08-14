@@ -6,11 +6,11 @@ export function renderWaitlistConfirmation(params: {
 }) {
   return renderEmailTemplate({
     title: 'You\u2019re on the Waitlist!',
-    preview: 'Thanks for joining Zendbox. We\u2019ll notify you when we launch.',
+    preview: 'Thanks for joining Xendbox. We\u2019ll notify you when we launch.',
     recipientName: params.name,
     body: `
       <p style="margin: 0 0 16px;">
-        Thanks for joining the <strong style="color: #FF5A1F;">Zendbox</strong> waitlist!
+        Thanks for joining the <strong style="color: #FF5A1F;">Xendbox</strong> waitlist!
       </p>
       <p style="margin: 0 0 16px;">
         We're building Africa's next-generation logistics infrastructure — connecting merchants, riders, warehouses, and customers through one intelligent network.
@@ -38,18 +38,18 @@ export function renderWelcomeEmail(params: {
     : `You're now ready to accept delivery requests, earn money on your schedule, and track your earnings in real-time.`
 
   return renderEmailTemplate({
-    title: `Welcome to Zendbox, ${params.name}!`,
+    title: `Welcome to Xendbox, ${params.name}!`,
     preview: 'Your account is ready. Start delivering smarter.',
     recipientName: params.name,
     body: `
       <p style="margin: 0 0 16px;">
-        Welcome aboard! Your <strong style="color: #FF5A1F;">Zendbox</strong> account is now active.
+        Welcome aboard! Your <strong style="color: #FF5A1F;">Xendbox</strong> account is now active.
       </p>
       <p style="margin: 0 0 16px;">
         ${roleContent}
       </p>
       <p style="margin: 0 0 16px;">
-        We're excited to have you as part of the Zendbox community transforming logistics across Africa.
+        We're excited to have you as part of the Xendbox community transforming logistics across Africa.
       </p>
     `,
     button: {
@@ -78,7 +78,7 @@ export function renderDeliveryUpdate(params: {
 
   const bodies: Record<string, string> = {
     dispatched: `
-      <p style="margin: 0 0 16px;">Your package has been picked up by your Zendbox rider and is on its way.</p>
+      <p style="margin: 0 0 16px;">Your package has been picked up by your Xendbox rider and is on its way.</p>
       ${params.pickup ? `<p style="margin: 0 0 8px;"><strong>Pickup:</strong> ${params.pickup}</p>` : ''}
       ${params.dropoff ? `<p style="margin: 0 0 8px;"><strong>Dropoff:</strong> ${params.dropoff}</p>` : ''}
       ${params.eta ? `<p style="margin: 0 0 8px;"><strong>Estimated arrival:</strong> ${params.eta}</p>` : ''}
@@ -86,17 +86,17 @@ export function renderDeliveryUpdate(params: {
     in_transit: `
       <p style="margin: 0 0 16px;">Your package is in transit and moving toward the delivery location.</p>
       ${params.eta ? `<p style="margin: 0 0 8px;"><strong>Estimated arrival:</strong> ${params.eta}</p>` : ''}
-      <p style="margin: 0 0 8px;">Track your delivery live on the Zendbox app.</p>
+      <p style="margin: 0 0 8px;">Track your delivery live on the Xendbox app.</p>
     `,
     nearby: `
-      <p style="margin: 0 0 16px;">Your Zendbox rider is nearby and will arrive shortly!</p>
+      <p style="margin: 0 0 16px;">Your Xendbox rider is nearby and will arrive shortly!</p>
       ${params.riderName ? `<p style="margin: 0 0 8px;"><strong>Rider:</strong> ${params.riderName}</p>` : ''}
       ${params.eta ? `<p style="margin: 0 0 8px;"><strong>ETA:</strong> ${params.eta}</p>` : ''}
     `,
     delivered: `
       <p style="margin: 0 0 16px;">Your package has been <strong style="color: #10B981;">delivered successfully</strong>!</p>
       ${params.dropoff ? `<p style="margin: 0 0 8px;"><strong>Delivered to:</strong> ${params.dropoff}</p>` : ''}
-      <p style="margin: 0 0 8px;">Thank you for using Zendbox. We hope you had a great delivery experience.</p>
+      <p style="margin: 0 0 8px;">Thank you for using Xendbox. We hope you had a great delivery experience.</p>
     `,
   }
 
@@ -128,16 +128,16 @@ export function renderAccountNotification(params: {
 
   const bodies: Record<string, string> = {
     password_changed: `
-      <p style="margin: 0 0 16px;">Your Zendbox account password was recently changed.</p>
+      <p style="margin: 0 0 16px;">Your Xendbox account password was recently changed.</p>
       <p style="margin: 0 0 16px;">If you did not make this change, please contact our support team immediately.</p>
     `,
     email_updated: `
-      <p style="margin: 0 0 16px;">Your Zendbox account email address has been updated successfully.</p>
+      <p style="margin: 0 0 16px;">Your Xendbox account email address has been updated successfully.</p>
       <p style="margin: 0 0 16px;">If you did not request this change, please contact our support team.</p>
     `,
     account_verified: `
-      <p style="margin: 0 0 16px;">Your Zendbox account has been verified successfully!</p>
-      <p style="margin: 0 0 16px;">You now have full access to all Zendbox features.</p>
+      <p style="margin: 0 0 16px;">Your Xendbox account has been verified successfully!</p>
+      <p style="margin: 0 0 16px;">You now have full access to all Xendbox features.</p>
     `,
   }
 
@@ -181,7 +181,7 @@ export function renderOnboardingEmail(params: {
     recipientName: params.name,
     body: `
       <p style="margin: 0 0 16px;">
-        Great progress! Here's your next step to get the most out of Zendbox.
+        Great progress! Here's your next step to get the most out of Xendbox.
       </p>
 
       <div style="background: rgba(255, 90, 31, 0.08); border-radius: 12px; padding: 20px; margin: 0 0 20px;">
@@ -198,7 +198,7 @@ export function renderOnboardingEmail(params: {
         Step ${params.step}: ${currentStep}
       </p>
       <p style="margin: 0 0 16px; color: #9ca3af;">
-        Complete this step to unlock the next stage of your Zendbox journey.
+        Complete this step to unlock the next stage of your Xendbox journey.
       </p>
     `,
     button: {

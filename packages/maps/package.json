@@ -2,5 +2,9 @@
   "name": "@xendbox/maps",
   "version": "1.0.0",
   "main": "src/index.ts",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@xendbox/database": "1.0.0",
+    "@xendbox/redis": "1.0.0"
+  }
 }

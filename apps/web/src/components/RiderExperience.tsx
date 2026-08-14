@@ -13,7 +13,7 @@ export function RiderExperience() {
   const { ref, isVisible } = useScrollReveal()
 
   return (
-    <section ref={ref} className="relative py-20 sm:py-28 border-y border-white/5 dark:border-gray-200">
+    <section id="riders" ref={ref} className="relative py-20 sm:py-28 border-y border-white/5 dark:border-gray-200 scroll-mt-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

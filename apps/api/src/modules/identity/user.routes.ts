@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import { authMiddleware } from "../../shared/middleware/auth"
 import { getUserById } from "./user.service"
-import { AppError } from "./auth.service"
+import { AppError } from "../../shared/errors"
 
 const users = new Hono()
 

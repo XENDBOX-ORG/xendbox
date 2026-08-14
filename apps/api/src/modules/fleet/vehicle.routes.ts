@@ -1,14 +1,18 @@
 import { Hono } from "hono"
 import { authMiddleware } from "../../shared/middleware/auth"
+import { requireOrgMember, assertOrgAccess } from "../../shared/middleware/org"
+import { parseBody } from "../../shared/validate"
+import { getParam } from "../../shared/params"
 import { createVehicle, listVehicles, assignVehicle, unassignVehicle } from "./vehicle.service"
-import { AppError } from "../identity/auth.service"
+import { createVehicleSchema, assignVehicleSchema } from "@xendbox/validation"
+import { AppError } from "../../shared/errors"
 
 const vehicles = new Hono()
 
-vehicles.post("/organizations/:orgId/vehicles", authMiddleware, async (c) => {
+vehicles.post("/organizations/:orgId/vehicles", authMiddleware, requireOrgMember, async (c) => {
   try {
-    const body = await c.req.json()
-    const vehicle = await createVehicle(c.req.param("orgId"), body)
+    const body = await parseBody(c, createVehicleSchema)
+    const vehicle = await createVehicle(getParam(c, "orgId"), body)
     return c.json(vehicle, 201)
   } catch (e) {
     if (e instanceof AppError) return c.json({ error: e.message }, e.status)
@@ -16,9 +20,9 @@ vehicles.post("/organizations/:orgId/vehicles", authMiddleware, async (c) => {
   }
 })
 
-vehicles.get("/organizations/:orgId/vehicles", authMiddleware, async (c) => {
+vehicles.get("/organizations/:orgId/vehicles", authMiddleware, requireOrgMember, async (c) => {
   try {
-    const list = await listVehicles(c.req.param("orgId"))
+    const list = await listVehicles(getParam(c, "orgId"))
     return c.json(list)
   } catch (e) {
     if (e instanceof AppError) return c.json({ error: e.message }, e.status)
@@ -28,8 +32,10 @@ vehicles.get("/organizations/:orgId/vehicles", authMiddleware, async (c) => {
 
 vehicles.post("/:vehicleId/assign", authMiddleware, async (c) => {
   try {
-    const { rider_id, organization_id } = await c.req.json()
-    const assignment = await assignVehicle(c.req.param("vehicleId"), rider_id, organization_id)
+    const user = c.get("user")
+    const body = await parseBody(c, assignVehicleSchema)
+    await assertOrgAccess(user.sub, body.organization_id)
+    const assignment = await assignVehicle(getParam(c, "vehicleId"), body.rider_id, body.organization_id)
     return c.json(assignment, 201)
   } catch (e) {
     if (e instanceof AppError) return c.json({ error: e.message }, e.status)
@@ -39,8 +45,10 @@ vehicles.post("/:vehicleId/assign", authMiddleware, async (c) => {
 
 vehicles.post("/:vehicleId/unassign", authMiddleware, async (c) => {
   try {
-    const { rider_id, organization_id } = await c.req.json()
-    const result = await unassignVehicle(c.req.param("vehicleId"), rider_id, organization_id)
+    const user = c.get("user")
+    const body = await parseBody(c, assignVehicleSchema)
+    await assertOrgAccess(user.sub, body.organization_id)
+    const result = await unassignVehicle(getParam(c, "vehicleId"), body.rider_id, body.organization_id)
     return c.json(result)
   } catch (e) {
     if (e instanceof AppError) return c.json({ error: e.message }, e.status)
