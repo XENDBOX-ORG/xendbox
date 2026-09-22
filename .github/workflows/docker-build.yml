@@ -75,7 +75,11 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Verify DATABASE_URL is set
+        run: echo "DATABASE_URL length: ${#DATABASE_URL}"
       - name: Install dependencies
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm ci --ignore-scripts
 
       - name: Generate Prisma Client
