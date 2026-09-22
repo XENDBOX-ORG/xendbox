@@ -60,3 +60,4 @@ services:
 # 3. Build Command: npm ci --ignore-scripts && npx prisma generate
 # 4. Start Command: npx tsx src/workers/index.ts
 # 5. Use the same Environment Variables as above
+# updated Tue Sep 22 20:06:46 WAT 2026
