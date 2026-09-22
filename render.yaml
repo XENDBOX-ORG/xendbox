@@ -1,0 +1,62 @@
+# render.yaml — Manual deployment reference for Render
+# Update this file if using Render Infra-as-Code deployment.
+# For manual deployment, configure the following via the Render Dashboard.
+
+services:
+  # ── Main API ──
+  - type: web
+    name: xendbox-api
+    env: node
+    plan: starter
+    buildCommand: npm ci --ignore-scripts && npx prisma generate
+    startCommand: npx tsx src/index.ts
+    healthCheckPath: /
+    envVars:
+      # ── Required ──
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      # Database (Neon or Render Postgres)
+      - key: DATABASE_URL
+        # Set via Render Dashboard → Secrets or Environment
+        # neon: postgresql://user:pass@host.neon.tech/db?sslmode=require
+        # render: postgresql://user:pass@internal-host:5432/db
+      # Redis (Render Redis / Upstash)
+      - key: REDIS_URL
+        # Set via Render Dashboard → Secrets
+      # JWT
+      - key: JWT_SECRET
+        # 32+ character random string
+      # ── Financial Providers ──
+      - key: MONNIFY_API_URL
+        value: https://api.monnify.com
+      - key: MONNIFY_API_KEY
+      - key: MONNIFY_SECRET_KEY
+      - key: MONNIFY_CONTRACT_CODE
+      - key: MONNIFY_WALLET_ACCOUNT_NUMBER
+      - key: PAYSTACK_SECRET_KEY
+      # ── Email (Resend) ──
+      - key: RESEND_API_KEY
+      - key: FROM_EMAIL
+        value: Xendbox <hello@xendboxafrica.com>
+      # ── Firebase (waitlist) ──
+      - key: VITE_FIREBASE_API_KEY
+      - key: VITE_FIREBASE_AUTH_DOMAIN
+      - key: VITE_FIREBASE_PROJECT_ID
+      - key: VITE_FIREBASE_STORAGE_BUCKET
+      - key: VITE_FIREBASE_MESSAGING_SENDER_ID
+      - key: VITE_FIREBASE_APP_ID
+      # ── Frontend URL ──
+      - key: VITE_API_URL
+        # e.g. https://xendbox-api.onrender.com
+      # ── Maps ──
+      - key: MAPBOX_ACCESS_TOKEN
+
+# Background Workers ──
+# After deploying the web service:
+# 1. Render Dashboard → Background Workers → New Background Worker
+# 2. Name: xendbox-worker
+# 3. Build Command: npm ci --ignore-scripts && npx prisma generate
+# 4. Start Command: npx tsx src/workers/index.ts
+# 5. Use the same Environment Variables as above

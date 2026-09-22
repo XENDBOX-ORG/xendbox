@@ -4,8 +4,9 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "tsx watch --env-file=.env src/index.ts",
-    "start": "tsx --env-file=.env src/index.ts",
-    "build": "tsc",
+    "dev:worker": "tsx --env-file=.env src/workers/index.ts",
+    "start": "npx tsx src/index.ts",
+    "build": "tsc && npx prisma generate",
     "test": "vitest run",
     "test:watch": "vitest"
   },

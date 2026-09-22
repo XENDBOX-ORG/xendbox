@@ -24,7 +24,7 @@ import notifications from "./modules/notification/notification.routes"
 import integration from "./modules/integration/integration.routes"
 import admin from "./modules/admin/admin.routes"
 import email from "./routes/email"
-import { startJobWorkers } from "./jobs"
+import { startWorkers } from "./workers"
 
 const app = new Hono()
 
@@ -66,7 +66,7 @@ app.route("/api/email", email)
 
 const port = parseInt(process.env.PORT || "3001")
 
-void startJobWorkers()
+void startWorkers()
 
 serve(
   {

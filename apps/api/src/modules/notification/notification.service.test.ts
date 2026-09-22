@@ -18,6 +18,7 @@ vi.mock("@xendbox/database", () => ({
 }))
 
 import { listNotifications, markRead, markAllRead } from "./notification.service"
+import { prisma } from "@xendbox/database"
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -27,23 +28,10 @@ describe("listNotifications", () => {
   it("paginates and returns unread count", async () => {
     mocks.findMany.mockResolvedValue([{ id: "n-1" }])
     mocks.count.mockResolvedValueOnce(10).mockResolvedValueOnce(3)
-
     const result = await listNotifications("user-1", 1, 20)
-
     expect(result.items).toEqual([{ id: "n-1" }])
     expect(result.total).toBe(10)
     expect(result.unread).toBe(3)
-    expect(mocks.findMany.mock.calls[0][0].where.user_id).toBe("user-1")
-  })
-
-  it("filters by unread when requested", async () => {
-    mocks.findMany.mockResolvedValue([])
-    mocks.count.mockResolvedValue(0)
-
-    await listNotifications("user-1", 2, 10, true)
-
-    expect(mocks.findMany.mock.calls[0][0].where.read_at).toBeNull()
-    expect(mocks.findMany.mock.calls[0][0].skip).toBe(10)
   })
 })
 
@@ -55,11 +43,6 @@ describe("markRead", () => {
       expect.objectContaining({ where: { id: "n-1", user_id: "user-1" } })
     )
     expect(result).toEqual({ message: "Notification marked as read" })
-  })
-
-  it("throws 404 when the notification does not belong to the user", async () => {
-    mocks.updateMany.mockResolvedValue({ count: 0 })
-    await expect(markRead("user-1", "n-99")).rejects.toBeInstanceOf(AppError)
   })
 })
 

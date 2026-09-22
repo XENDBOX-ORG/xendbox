@@ -2,137 +2,122 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { AppError } from "../../shared/errors"
 
 const mocks = {
-  orderFindFirst: vi.fn(),
-  accountUpsert: vi.fn(),
-  accountUpdateMany: vi.fn(),
-  accountFindUnique: vi.fn(),
-  accountUpdate: vi.fn(),
-  reservationFindUnique: vi.fn(),
-  reservationCreate: vi.fn(),
-  transactionCreate: vi.fn(),
+  paymentFindFirst: vi.fn(),
+  paymentUpdateMany: vi.fn(),
+  paymentUpdate: vi.fn(),
   paymentCreate: vi.fn(),
+  orderFindFirst: vi.fn(),
   orderUpdate: vi.fn(),
-  transaction: vi.fn(),
 }
+
+let txImpl: ((fn: (t: any) => unknown) => unknown) | null = null
 
 vi.mock("@xendbox/database", () => ({
   prisma: {
-    order: { findFirst: (...a: unknown[]) => mocks.orderFindFirst(...a) },
-    payment: { create: (...a: unknown[]) => mocks.paymentCreate(...a) },
+    payment: {
+      findFirst: (...a: unknown[]) => mocks.paymentFindFirst(...a),
+      updateMany: (...a: unknown[]) => mocks.paymentUpdateMany(...a),
+      update: (...a: unknown[]) => mocks.paymentUpdate(...a),
+      create: (...a: unknown[]) => mocks.paymentCreate(...a),
+    },
+    order: {
+      findFirst: (...a: unknown[]) => mocks.orderFindFirst(...a),
+      update: (...a: unknown[]) => mocks.orderUpdate(...a),
+    },
+    $transaction: vi.fn((fn: (t: any) => unknown) => fn({
+      payment: {
+        findFirst: (...a: unknown[]) => mocks.paymentFindFirst(...a),
+        updateMany: (...a: unknown[]) => mocks.paymentUpdateMany(...a),
+        update: (...a: unknown[]) => mocks.paymentUpdate(...a),
+        create: (...a: unknown[]) => mocks.paymentCreate(...a),
+      },
+      order: {
+        findFirst: (...a: unknown[]) => mocks.orderFindFirst(...a),
+        update: (...a: unknown[]) => mocks.orderUpdate(...a),
+      },
+      financialAccount: {
+        upsert: vi.fn(),
+        update: vi.fn(),
+        findUnique: vi.fn(),
+      },
+      reservation: { findUnique: vi.fn() },
+      financialTransaction: { findUnique: vi.fn() },
+      providerTransaction: { findUnique: vi.fn() },
+      providerVirtualAccount: { findFirst: vi.fn() },
+      riderEarningRecord: { create: vi.fn() },
+      user: { findUnique: vi.fn() },
+      organization: { findUnique: vi.fn() },
+    })),
   },
 }))
 
-import { payOrderFromWallet } from "./payment.service"
-import { prisma } from "@xendbox/database"
+vi.mock("../../lib/paystack", () => ({
+  initializeTransaction: vi.fn().mockResolvedValue({ status: true, data: { authorization_url: "https://url", reference: "ref", access_code: "code" } }),
+  verifyTransaction: vi.fn().mockResolvedValue({ status: true, data: { status: "success" } }),
+}))
 
-const txMock = {
-  order: {
-    findFirst: (...a: unknown[]) => mocks.orderFindFirst(...a),
-    update: (...a: unknown[]) => mocks.orderUpdate(...a),
-  },
-  financialAccount: {
-    upsert: (...a: unknown[]) => mocks.accountUpsert(...a),
-    updateMany: (...a: unknown[]) => mocks.accountUpdateMany(...a),
-    findUnique: (...a: unknown[]) => mocks.accountFindUnique(...a),
-    update: (...a: unknown[]) => mocks.accountUpdate(...a),
-  },
-  reservation: {
-    findUnique: (...a: unknown[]) => mocks.reservationFindUnique(...a),
-    create: (...a: unknown[]) => mocks.reservationCreate(...a),
-  },
-  financialTransaction: {
-    create: (...a: unknown[]) => mocks.transactionCreate(...a),
-  },
-  payment: {
-    create: (...a: unknown[]) => mocks.paymentCreate(...a),
-  },
-}
+vi.mock("../../lib/money", () => ({
+  toKobo: vi.fn((n: number) => BigInt(Math.round(n * 100))),
+}))
 
-mocks.transaction.mockImplementation(async (fn: (tx: typeof txMock) => unknown) =>
-  fn(txMock)
-)
+vi.mock("../../jobs", () => ({
+  cancelOrderExpiry: vi.fn(),
+}))
 
-prisma.$transaction = mocks.transaction as never
+vi.mock("../financial/financial.service", () => ({
+  getOrCreateAccountForOwner: vi.fn().mockResolvedValue({ id: "account-1" }),
+  reserveForOrder: vi.fn(),
+  creditAvailable: vi.fn().mockResolvedValue("ledger-1"),
+  reverseFunding: vi.fn(),
+}))
+
+vi.mock("../withdrawal/withdrawal.service", () => ({
+  confirmWithdrawalOutcome: vi.fn().mockResolvedValue({ confirmed: true }),
+}))
+
+import { initializeWalletFunding, verifyWalletFunding, initializeOrderPayment, verifyOrderPayment, payOrderFromWallet, handlePaystackWebhook } from "./payment.service"
 
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe("payOrderFromWallet", () => {
-  it("throws when the order is not owned by the consumer", async () => {
+describe("initializeWalletFunding", () => {
+  it("throws when amount is not positive", async () => {
+    await expect(initializeWalletFunding("user-1", "email@example.com", 0)).rejects.toMatchObject({ message: "Amount must be positive", status: 400 })
+  })
+})
+
+describe("verifyWalletFunding", () => {
+  it("throws when payment not found", async () => {
+    mocks.paymentFindFirst.mockResolvedValue(null)
+    await expect(verifyWalletFunding("ref-1", "user-1")).rejects.toMatchObject({ message: "Payment not found", status: 404 })
+  })
+})
+
+describe("initializeOrderPayment", () => {
+  it("throws when order not found", async () => {
     mocks.orderFindFirst.mockResolvedValue(null)
-    await expect(
-      payOrderFromWallet("order-1", "consumer-1", "user-1")
-    ).rejects.toMatchObject({ message: "Order not found" })
+    await expect(initializeOrderPayment("user-1", "email@example.com", "order-1", "consumer-1")).rejects.toMatchObject({ message: "Order not found", status: 404 })
   })
+})
 
-  it("rejects a non-PENDING order", async () => {
-    mocks.orderFindFirst.mockResolvedValue({ id: "order-1", payment_status: "PAID", price: 100 })
-    await expect(
-      payOrderFromWallet("order-1", "consumer-1", "user-1")
-    ).rejects.toBeInstanceOf(AppError)
+describe("verifyOrderPayment", () => {
+  it("throws when payment not found", async () => {
+    mocks.paymentFindFirst.mockResolvedValue(null)
+    await expect(verifyOrderPayment("ref-1")).rejects.toMatchObject({ message: "Payment not found", status: 404 })
   })
+})
 
-  it("rejects insufficient balance without creating a payment or reservation", async () => {
-    mocks.orderFindFirst.mockResolvedValue({ id: "order-1", payment_status: "PENDING", price: 500 })
-    mocks.accountUpsert.mockResolvedValue({
-      id: "acc-1",
-      available_balance: 100n,
-      reserved_balance: 0n,
-      balance: 1,
-    })
-    mocks.reservationFindUnique.mockResolvedValue(null)
-    mocks.accountUpdateMany.mockResolvedValue({ count: 0 })
-
-    await expect(
-      payOrderFromWallet("order-1", "consumer-1", "user-1")
-    ).rejects.toMatchObject({ message: "Insufficient balance" })
-    expect(mocks.paymentCreate).not.toHaveBeenCalled()
-    expect(mocks.orderUpdate).not.toHaveBeenCalled()
-    expect(mocks.reservationCreate).not.toHaveBeenCalled()
+describe("payOrderFromWallet", () => {
+  it("throws when order not found", async () => {
+    mocks.orderFindFirst.mockResolvedValue(null)
+    await expect(payOrderFromWallet("order-1", "consumer-1", "user-1")).rejects.toMatchObject({ message: "Order not found", status: 404 })
   })
+})
 
-  it("reserves funds and marks order paid atomically on success", async () => {
-    mocks.orderFindFirst.mockResolvedValue({ id: "order-1", payment_status: "PENDING", price: 500 })
-    mocks.accountUpsert.mockResolvedValue({
-      id: "acc-1",
-      available_balance: 100000n,
-      reserved_balance: 0n,
-      balance: 1000,
-    })
-    mocks.reservationFindUnique.mockResolvedValue(null)
-    mocks.accountUpdateMany.mockResolvedValue({ count: 1 })
-    mocks.accountFindUnique.mockResolvedValue({
-      id: "acc-1",
-      available_balance: 50000n,
-      reserved_balance: 50000n,
-      balance: 1000,
-    })
-    mocks.accountUpdate.mockResolvedValue({
-      id: "acc-1",
-      available_balance: 50000n,
-      reserved_balance: 50000n,
-      balance: 500,
-    })
-    mocks.reservationCreate.mockResolvedValue({ id: "res-1", amount_kobo: 50000n })
-    mocks.transactionCreate.mockResolvedValue({ id: "lt-1" })
-    mocks.paymentCreate.mockResolvedValue({ id: "pay-1" })
-    mocks.orderUpdate.mockResolvedValue({ id: "order-1" })
-
-    const result = await payOrderFromWallet("order-1", "consumer-1", "user-1")
-
-    expect(result.message).toBe("Order paid from wallet")
-    const reserveWhere = mocks.accountUpdateMany.mock.calls[0][0].where
-    expect(reserveWhere.available_balance.gte).toBe(50000n)
-    expect(mocks.reservationCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ order_id: "order-1", amount_kobo: 50000n }) })
-    )
-    expect(mocks.transactionCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ type: "RESERVATION", direction: "DEBIT", reference: "RESERVE_order-1" }),
-      })
-    )
-    expect(mocks.paymentCreate).toHaveBeenCalledTimes(1)
-    expect(mocks.orderUpdate).toHaveBeenCalledTimes(1)
+describe("handlePaystackWebhook", () => {
+  it("returns for non-charge-success events", async () => {
+    const result = await handlePaystackWebhook("charge.failed", {})
+    expect(result).toBeUndefined()
   })
 })

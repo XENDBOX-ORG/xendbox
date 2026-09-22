@@ -13,6 +13,5 @@ coverage
 firebase-debug.log
 logs
 docker-compose*.yml
-Dockerfile
 README.md
 progress.html

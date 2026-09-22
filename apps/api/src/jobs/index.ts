@@ -69,7 +69,7 @@ export async function cancelDispatchTimeout(dispatchId: string | null): Promise<
   }
 }
 
-async function expireDispatch(dispatchId: string) {
+export async function expireDispatch(dispatchId: string) {
   try {
     const dispatch = await prisma.dispatch.findUnique({
       where: { id: dispatchId },
@@ -148,7 +148,7 @@ export async function cancelOrderExpiry(orderId: string | null): Promise<void> {
   }
 }
 
-async function expireUnpaidOrder(orderId: string) {
+export async function expireUnpaidOrder(orderId: string) {
   try {
     const updated = await prisma.order.updateMany({
       where: { id: orderId, payment_status: "PENDING", status: { in: ["CREATED", "PAYMENT_PENDING"] } },
@@ -166,37 +166,6 @@ async function expireUnpaidOrder(orderId: string) {
   } catch (err) {
     console.error("[job] order expiry failed:", err)
   }
-}
-
-export async function startJobWorkers(): Promise<void> {
-  if (!isRedisAvailable()) {
-    console.warn("[jobs] Redis unavailable; using in-process fallback timers")
-    return
-  }
-
-  const { Worker } = await import("bullmq")
-
-  new Worker(
-    "dispatch",
-    async (job) => {
-      if (job.name === "dispatch.timeout") {
-        await expireDispatch(job.data.dispatchId)
-      }
-    },
-    { connection: connection() }
-  )
-
-  new Worker(
-    "orders",
-    async (job) => {
-      if (job.name === "orders.expire_unpaid") {
-        await expireUnpaidOrder(job.data.orderId)
-      }
-    },
-    { connection: connection() }
-  )
-
-  console.log("[jobs] BullMQ workers started")
 }
 
 export { DISPATCH_TIMEOUT_MS, ORDER_EXPIRY_MS }

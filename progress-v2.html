@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xendbox — Architecture & Progress · v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand-50: #FFF7ED;
+    --brand-100: #FFEDD5;
+    --brand-200: #FED7AA;
+    --brand-300: #FDBA74;
+    --brand-400: #FF6B2B;
+    --brand-500: #FF6A00;
+    --brand-600: #E04400;
+    --brand-700: #C23800;
+    --brand-800: #9A2E00;
+    --brand-900: #7A2400;
+    --dark: #0A0A0A;
+    --dark2: #111111;
+    --dark3: #1A1A1A;
+    --dark4: #222222;
+    --grayx: #9CA3AF;
+    --gray-700: #374151;
+    --gray-800: #1F2937;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --info: #3B82F6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--dark);
+    color: #fff;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(255, 77, 0, 0.3); }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #0A0A0A; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+  /* Header */
+  .header {
+    padding: 48px 0 32px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: linear-gradient(180deg, rgba(255, 106, 0, 0.04) 0%, transparent 100%);
+  }
+  .header-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  .header-left { display: flex; align-items: center; gap: 20px; }
+  .logo {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--brand-500), var(--brand-600));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 20px; color: #fff;
+    box-shadow: 0 0 30px rgba(255,106,0,0.2);
+  }
+  .header-title h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+  .header-title p { color: var(--grayx); font-size: 14px; margin-top: 2px; }
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25);
+    padding: 8px 16px; border-radius: 100px; font-size: 13px; font-weight: 500; color: var(--success);
+  }
+  .status-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .header-meta { display: flex; gap: 24px; font-size: 13px; color: var(--grayx); margin-top: 4px; }
+
+  /* Section */
+  .section { padding: 40px 0; }
+  .section-title {
+    font-size: 22px; font-weight: 700; letter-spacing: -0.3px;
+    display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+  }
+  .section-title .count {
+    font-size: 13px; font-weight: 500; color: var(--grayx);
+    background: rgba(255,255,255,0.05); padding: 2px 10px; border-radius: 100px;
+  }
+
+  /* Glass Card */
+  .card {
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.2s;
+  }
+  .card:hover { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); }
+
+  /* Module Grid */
+  .modules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .module-card { padding: 20px; }
+  .module-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .module-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .module-info h3 { font-size: 15px; font-weight: 600; }
+  .module-info p { font-size: 12px; color: var(--grayx); margin-top: 2px; }
+  .module-stats { display: flex; gap: 12px; font-size: 12px; color: var(--grayx); margin-bottom: 10px; }
+  .module-stats span { display: flex; align-items: center; gap: 4px; }
+  .module-stats .num { color: #fff; font-weight: 600; }
+
+  /* Progress Bar */
+  .progress-bar { height: 4px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+  .progress-fill.complete { background: linear-gradient(90deg, var(--success), #34D399); }
+  .progress-fill.partial { background: linear-gradient(90deg, var(--brand-500), var(--brand-400)); }
+  .progress-fill.early { background: linear-gradient(90deg, var(--info), #60A5FA); }
+  .progress-fill.minimal { background: linear-gradient(90deg, var(--warning), #FBBF24); }
+  .progress-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--grayx); margin-top: 6px; }
+
+  /* Route Table */
+  .route-group { margin-bottom: 20px; }
+  .route-group:last-child { margin-bottom: 0; }
+  .route-group-title {
+    font-size: 13px; font-weight: 600; color: var(--grayx);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 8px; padding: 0 4px;
+  }
+  .route-table { width: 100%; border-collapse: separate; border-spacing: 0 4px; }
+  .route-table th {
+    text-align: left; font-size: 11px; font-weight: 500; color: var(--grayx);
+    text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 12px;
+  }
+  .route-table td { padding: 10px 12px; font-size: 13px; }
+  .route-row { transition: all 0.15s; }
+  .route-row:hover { background: rgba(255,255,255,0.03); }
+  .method {
+    display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 8px;
+    border-radius: 4px; letter-spacing: 0.3px; font-family: monospace;
+  }
+  .method.get { background: rgba(59,130,246,0.15); color: #60A5FA; }
+  .method.post { background: rgba(16,185,129,0.15); color: #34D399; }
+  .method.patch { background: rgba(245,158,11,0.15); color: #FBBF24; }
+  .method.put { background: rgba(99,102,241,0.15); color: #818CF8; }
+  .method.delete { background: rgba(239,68,68,0.15); color: #F87171; }
+  .path { font-family: monospace; font-size: 12px; color: #e4e4e7; }
+  .desc { font-size: 12px; color: var(--grayx); }
+  .auth-badge {
+    font-size: 10px; padding: 2px 8px; border-radius: 100px; font-weight: 500;
+    display: inline-block;
+  }
+  .auth-badge.jwt { background: rgba(139,92,246,0.15); color: #A78BFA; }
+  .auth-badge.public { background: rgba(255,255,255,0.05); color: var(--grayx); }
+
+  /* Flow Diagram */
+  .flow { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0; padding: 16px 0; }
+  .flow-node {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 14px 18px; border-radius: 12px;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    min-width: 110px; text-align: center;
+  }
+  .flow-node .icon { font-size: 22px; }
+  .flow-node .label { font-size: 11px; font-weight: 500; color: var(--grayx); }
+  .flow-node .sub { font-size: 10px; color: rgba(255,255,255,0.35); }
+  .flow-node.highlight {
+    background: rgba(255,106,0,0.08); border-color: rgba(255,106,0,0.2);
+    box-shadow: 0 0 20px rgba(255,106,0,0.05);
+  }
+  .flow-node.success { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.2); }
+  .flow-arrow {
+    font-size: 18px; color: rgba(255,255,255,0.15); padding: 0 4px;
+    flex-shrink: 0;
+  }
+  .flow-arrow.down { display: block; font-size: 14px; padding: 2px 0; }
+
+  /* Order status flow */
+  .order-flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 16px 0; }
+  .order-step {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 12px; border-radius: 6px;
+    font-size: 11px; font-weight: 500;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+    color: var(--grayx);
+  }
+  .order-step.active { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.25); color: var(--success); }
+  .order-step.current { background: rgba(255,106,0,0.1); border-color: rgba(255,106,0,0.25); color: var(--brand-400); }
+  .order-conn { color: rgba(255,255,255,0.1); font-size: 10px; }
+
+  /* Data Flow Diagram */
+  .dataflow { display: flex; flex-direction: column; gap: 4px; padding: 8px 0; }
+  .dataflow-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .df-node {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 8px;
+    font-size: 12px; font-weight: 500;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  }
+  .df-node.system { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.2); color: #60A5FA; }
+  .df-node.user { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.2); color: #34D399; }
+  .df-node.external { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); color: #FBBF24; }
+  .df-node.data { background: rgba(139,92,246,0.08); border-color: rgba(139,92,246,0.2); color: #A78BFA; }
+  .df-arrow { color: rgba(255,255,255,0.15); font-size: 14px; }
+  .df-label { font-size: 10px; color: var(--grayx); padding: 0 4px; font-style: italic; }
+
+  /* Stack Grid */
+  .stack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+  .stack-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; border-radius: 12px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+    transition: all 0.2s;
+  }
+  .stack-item:hover { border-color: rgba(255,255,255,0.12); }
+  .stack-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .stack-info h4 { font-size: 13px; font-weight: 600; }
+  .stack-info p { font-size: 11px; color: var(--grayx); }
+
+  /* Stats Grid */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+  .stat-card { text-align: center; padding: 24px 16px; }
+  .stat-number { font-size: 36px; font-weight: 800; letter-spacing: -1px; }
+  .stat-number.green { color: var(--success); }
+  .stat-number.orange { color: var(--brand-400); }
+  .stat-number.blue { color: var(--info); }
+  .stat-number.yellow { color: var(--warning); }
+  .stat-label { font-size: 13px; color: var(--grayx); margin-top: 4px; }
+
+  /* Two column */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* Legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--grayx); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* ER Diagram (simplified) */
+  .er-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .er-model { padding: 16px; }
+  .er-model h4 { font-size: 13px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .er-model h4 .er-badge {
+    font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 4px;
+    background: rgba(255,255,255,0.06); color: var(--grayx);
+  }
+  .er-field { display: flex; align-items: center; gap: 6px; padding: 3px 0; font-size: 11px; }
+  .er-field .pk { color: var(--warning); font-size: 9px; font-weight: 700; }
+  .er-field .fk { color: var(--info); font-size: 9px; font-weight: 700; }
+  .er-field .field-name { color: #e4e4e7; }
+  .er-field .field-type { color: var(--grayx); font-size: 10px; }
+  .er-rels { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .er-rel { font-size: 10px; color: var(--grayx); padding: 2px 0; }
+
+  /* Section divider */
+  .section-divider {
+    height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    margin: 8px 0;
+  }
+
+  a { color: var(--brand-400); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .header-inner { flex-direction: column; align-items: flex-start; }
+    .modules-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .stack-grid { grid-template-columns: repeat(2, 1fr); }
+    .er-grid { grid-template-columns: 1fr; }
+    .flow { flex-direction: column; }
+    .flow-arrow { transform: rotate(90deg); }
+  }
+
+  .glow-orange { box-shadow: 0 0 60px rgba(255, 77, 0, 0.2); }
+
+  /* Tabs for route tables */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tab {
+    padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 500;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+    color: var(--grayx); cursor: pointer; transition: all 0.15s;
+  }
+  .tab:hover { background: rgba(255,255,255,0.06); }
+  .tab.active { background: rgba(255,106,0,0.1); border-color: rgba(255,106,0,0.25); color: var(--brand-400); }
+
+  .route-content { display: none; }
+  .route-content.active { display: block; }
+
+  /* Architecture Flow */
+  .arch-flow {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 24px 0;
+  }
+  .arch-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .arch-box {
+    padding: 10px 20px; border-radius: 10px;
+    font-size: 12px; font-weight: 500;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    text-align: center; min-width: 90px;
+  }
+  .arch-box.client { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.2); color: #34D399; }
+  .arch-box.gateway { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.2); color: #60A5FA; }
+  .arch-box.service { background: rgba(255,106,0,0.08); border-color: rgba(255,106,0,0.2); color: var(--brand-400); }
+  .arch-box.data { background: rgba(139,92,246,0.08); border-color: rgba(139,92,246,0.2); color: #A78BFA; }
+  .arch-box.external { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); color: #FBBF24; }
+  .arch-arrow { color: rgba(255,255,255,0.12); font-size: 16px; }
+
+  .implementation-list { list-style: none; }
+  .implementation-list li {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; font-size: 13px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .implementation-list li:last-child { border-bottom: none; }
+  .impl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .impl-dot.done { background: var(--success); }
+  .impl-dot.wip { background: var(--brand-500); animation: pulse 2s infinite; }
+  .impl-dot.planned { background: var(--gray-700); }
+
+  .pill { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 100px; }
+  .pill.done { background: rgba(16,185,129,0.15); color: var(--success); }
+  .pill.wip { background: rgba(255,106,0,0.15); color: var(--brand-400); }
+  .pill.planned { background: rgba(255,255,255,0.05); color: var(--grayx); }
+
+  .expandable { cursor: default; }
+</style>
+</head>
+<body>
+
+<div class="bg-grid">
+  <!-- HEADER -->
+  <header class="header">
+    <div class="container">
+      <div class="header-inner">
+        <div class="header-left">
+          <div class="logo">X</div>
+          <div class="header-title">
+            <h1>Xendbox</h1>
+            <p>AI-Native Delivery Infrastructure for Africa</p>
+            <div class="header-meta">
+              <span>v1.0 · Phase 2 (Financial Ledger)</span>
+              <span>93 API Endpoints</span>
+              <span>40 Database Models</span>
+              <span>56 Tests Passing</span>
+            </div>
+          </div>
+        </div>
+        <div class="status-badge">
+          <span class="dot"></span>
+          Active Development
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- OVERVIEW STATS -->
+    <section class="section">
+      <div class="stats-grid">
+        <div class="card stat-card">
+          <div class="stat-number orange">93</div>
+          <div class="stat-label">API Endpoints</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-number green">40</div>
+          <div class="stat-label">Database Models</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-number blue">18</div>
+          <div class="stat-label">Service Modules</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-number yellow">28</div>
+          <div class="stat-label">Enums</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ARCHITECTURE OVERVIEW -->
+    <section class="section">
+      <div class="section-title">Architecture Overview</div>
+
+      <div class="card" style="padding: 20px 24px;">
+        <p style="font-size: 13px; color: var(--grayx); margin-bottom: 16px;">
+          Monorepo with 4 apps + 8 shared packages. Domain-driven modular backend on Hono.js, PostgreSQL via Prisma,
+          Redis GEO dispatching, BullMQ background jobs, and a double-entry financial ledger on Monnify.
+        </p>
+
+        <div class="arch-flow">
+          <div class="arch-row">
+            <div class="arch-box client">React Web</div>
+            <div class="arch-arrow">&rarr;</div>
+            <div class="arch-box client">Expo Merchant App</div>
+            <div class="arch-arrow">&rarr;</div>
+            <div class="arch-box client">Expo Rider App</div>
+            <div class="arch-arrow">&rarr;</div>
+            <div class="arch-box client">3rd Party API</div>
+          </div>
+          <div class="arch-arrow" style="display: block;">&darr;</div>
+          <div class="arch-row">
+            <div class="arch-box gateway" style="min-width: 160px;">Hono.js API Gateway<br><span style="font-weight:400;font-size:10px;color:var(--grayx);">CORS · JWT Auth · RBAC · Audit Log</span></div>
+          </div>
+          <div class="arch-arrow" style="display: block;">&darr;</div>
+          <div class="arch-row" style="gap:8px;max-width:900px;">
+            <div class="arch-box service">Auth</div>
+            <div class="arch-box service">Users</div>
+            <div class="arch-box service">Organizations</div>
+            <div class="arch-box service">Consumers</div>
+            <div class="arch-box service">Orders</div>
+            <div class="arch-box service">Riders</div>
+            <div class="arch-box service">Dispatch</div>
+            <div class="arch-box service">Tracking</div>
+            <div class="arch-box service">Pickup Stations</div>
+            <div class="arch-box service">Fleet</div>
+            <div class="arch-box service">Financial</div>
+            <div class="arch-box service">Withdrawals</div>
+            <div class="arch-box service">Settlements</div>
+            <div class="arch-box service">Ratings</div>
+            <div class="arch-box service">Notifications</div>
+            <div class="arch-box service">Integrations</div>
+            <div class="arch-box service">Admin</div>
+          </div>
+          <div class="arch-arrow" style="display: block;">&darr;</div>
+          <div class="arch-row">
+            <div class="arch-box data">PostgreSQL</div>
+            <div class="arch-arrow">&larr;</div>
+            <div class="arch-box data">Prisma ORM</div>
+            <div class="arch-arrow">&larr;</div>
+            <div class="arch-box data">Redis GEO + BullMQ</div>
+          </div>
+          <div class="arch-arrow" style="display: block;">&darr;</div>
+          <div class="arch-row">
+            <div class="arch-box external">Monnify</div>
+            <div class="arch-box external">Paystack</div>
+            <div class="arch-box external">Resend</div>
+            <div class="arch-box external">Firebase Hosting</div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:24px;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);font-size:12px;color:var(--grayx);">
+          <div><span style="color:var(--brand-400);font-weight:600;">$</span> Monorepo: npm workspaces + Nx</div>
+          <div><span style="color:var(--brand-400);font-weight:600;">$</span> Architecture: Domain-driven modules</div>
+          <div><span style="color:var(--brand-400);font-weight:600;">$</span> Pattern: Service Layer + Repository (Prisma)</div>
+          <div><span style="color:var(--brand-400);font-weight:600;">$</span> Auth: JWT (15m) + Opaque Refresh Tokens (7d)</div>
+          <div><span style="color:var(--brand-400);font-weight:600;">$</span> Ledger: Integer kobo (BigInt) double-entry</div>
+          <div><span style="color:var(--brand-400);font-weight:600;">$</span> Money: Monnify single rail (VA + disbursements)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE STATUS -->
+    <section class="section">
+      <div class="section-title">Module Status <span class="count">18 modules</span></div>
+
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:var(--success);"></span> Complete</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--brand-500);"></span> In Progress</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--info);"></span> Early Stage</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--warning);"></span> Minimal</span>
+      </div>
+
+      <div class="modules-grid">
+        <div class="card module-card">
+          <div class="module-header">
+            <div class="module-icon" style="background:rgba(16,185,129,0.12);">🔐</div>
+            <div class="module-info">
+              <h3>Identity & Auth</h3>
+              <p>Register, login, OTP, opaque refresh tokens</p>
+            </div>
+          </div>
+          <div class="module-stats">
+            <span><span class="num">6</span> routes</span>
+            <span><span class="num">1</span> package</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill complete" style="width:100%"></div></div>
+          <div class="progress-label"><span>100%</span><span>6/6 endpoints</span></div>
+        </div>
+
+        <div class="card module-card">
+          <div class="module-header">
+            <div class="module-icon" style="background:rgba(16,185,129,0.12);">🏢</div>
+            <div class="module-info">
+              <h3>Organizations</h3>
+              <p>MERCHANT / LOGISTICS / PICKUP_STATION + RBAC members</p>
+            </div>
+          </div>
+          <div class="module-stats">
+            <span><span class="num">4</span> routes</span>
+            <span><span class="num">1</span> service</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill complete" style="width:100%"></div></div>
+          <div class="progress-label"><span>100%</span><span>4/4 endpoints</span></div>
+        </div>
+
+        <div class="card module-card">
+          <div class="module-header">
+            <div class="module-icon" style="background:rgba(16,185,129,0.12);">👥</div>
+            <div class="module-info">
+              <h3>Consumers & Recipients</h3>
+              <p>Consumer + merchant profiles, recipient CRUD</p>
+            </div>
+          </div>
+          <div class="module-stats">
+            <span><span class="num">9</span> routes</span>
+            <span><span class="num">3</span> services</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill complete" style="width:100%"></div></div>
+          <div class="progress-label"><span>100%</span><span>9/9 endpoints</span></div>
+        </div>
+
+        <div class="card module-card">
+          <div class="module-header">
+            <div class="module-icon" style="background:rgba(16,185,129,0.12);">📦</div>
+            <div class="module-info">
+              <h3>Orders</h3>
+              <p>Create, status flow, event trail, 24h expiry job</p>
+            </div>
+          </div>
+          <div class="module-stats">
+            <span><span class="num">4</span> routes</span>
+            <span><span class="num">1</span> service</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill complete" style="width:100%"></div></div>
+          <div class="progress-label"><span>100%</span><span>4/4 endpoints + job</span></div>
+        </div>
+
+        <div class="card module-card">
+          <div class="module-header">
+            <div class="module-icon" style="background:rgba(16,185,129,0.12);">🏍️</div>
+            <div class="module-info">
+              <h3>Riders & Fleet</h3>
+              <p>Profiles, Redis GEO availability, vehicle assignment</p>
+            </div>
+          </div>
+          <div class="module-stats">
+            <span><span class="num">9</span> routes</span>
+            <span><span class="num">2</span> services</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill complete" style="width:100%"></div></div>
+          <div class="progress-label"><span>100%</span><span>9/9 endpoints</span></div>
+        </div>
+
+        <div class="card module-card">
+          <div class="module-header">
+            <div class="module-icon" style="background:rgba(16,185,129,0.12);">🎯</div>
+            <div class="module-info">
+              <h3>Dispatch Engine</h3>
+              <p>Rider matching, attempts, 60s timeout, return flow</p>
+            </div>
+          </div>
+          <div class="module-stats">
+            <span><span class="num">6</span> routes</span>
+            <span><span class="num">1</span> queue</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill complete" style="width:100%"></div></div>
+          <div class="progress-label"><span>100%</span><span>6/6 endpoints + BullMQ</span></div>
+        </div>
+
+        <div class="card module-card">
+          <div class="module-header">
+            <div class="module-icon" style="background:rgba(16,185,129,0.12);">📍</div>
+            <div class="module-info">
+              <h3>Tracking</h3>
+              <p>REST location updates + consumer view</p>
+            </div>
+          </div>
+          <div class="module-stats">
+            <span><span class="num">3</span> routes</span>
+            <span><span class="num">1</span> service</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill partial" style="width:80%"></div></div>
+          <div class="progress-label"><span>80%</span><span>WebSocket live tracking planned</span></div>
+        </div>
+
+        <div class="card module-card">
+          <div class="module-header">
+            <div class="module-icon" style="background:var(--brand-500);color:#fff;">. ,</div>
+            <div class="module-info">
+              <h3>Payments</h3>
+              <p>Monnify VA + Paystack, idempotent webhooks, reservations</p>
+            </div>
+          </div>
+          <div class="module-stats">
+            <span><span class="num">6</span> routes</span>
+            <span><span class="num">2</span> providers</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill partial" style="width:95%"></div></div>
+          <div class="progress-label"><span>95%</span><span>Refund flow pending</span></div>
+        </div>
+
+        <div class="card module-card">
+          <div class="module-header">
+            <div class="module-icon" style="background:rgba(16,185,129,0.12);">🏪</div>
+            <div class="module-info">
+              <h3>Pickup Stations</h3>
+              <p>PUDO lifecycle incl. STORED + return flow</p>
+            </div>
+          </div>
+          <div class="module-stats">
+            <span><span class="num">10</span> routes</span>
+            <span><span class="num">1</span> service</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill complete" style="width:100%"></div></div>
+          <div class="progress-label"><span>100%</span><span>10/10 endpoints</span></div>
+        </div>
+
+        <div class="card module-card">
+          <div class="module-header">
+            <div class="module-icon" style="background:rgba(16,185,129,0.12);">💳</div>
+            <div class="module-info">
+              <h3>Financial Ledger</h3>
+              <p>Kobo double-entry, reservations, virtual accounts</p>
+            </div>
+          </div>
+          <div class="module-stats">
+            <span><span class="num">8</span> routes</span>
+            <span><span class="num">2</span> services</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill partial" style="width:95%"></div></div>
+          <div class="progress-label"><span>95%</span><span>Revenue aggregation fix pending</span></div>
+        </div>
+
+        <div class="card module-card">
+          <div class="module-header">
+            <div class="module-icon" style="background:var(--brand-500);color:#fff;">.</div>
+            <div class="module-info">
+              <h3>Withdrawals</h3>
+              <p>Name enquiry, hold, Monnify disbursement, reversal</p>
+            </div>
+          </div>
+          <div class="module-stats">
+            <span><span class="num">3</span> routes</span>
+            <span><span class="num">1</span> service</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill partial" style="width:95%"></div></div>
+          <div class="progress-label"><span>95%</span><span>Payments in production pending</span></div>
+        </div>
+
+        <div class="card module-card">
+          <div class="module-header">
+            <div class="module-icon" style="background:rgba(16,185,129,0.12);">📊</div>
+            <div class="module-info">
+              <h3>Settlements</h3>
+              <p>80/20 settleDelivery ledger + report generator</p>
+            </div>
+          </div>
+          <div class="module-stats">
+            <span><span class="num">3</span> routes</span>
+            <span><span class="num">2</span> services</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill partial" style="width:90%"></div></div>
+          <div class="progress-label"><span>90%</span><span>Station commission pending</span></div>
+        </div>
+
+        <div class="card module-card">
+          <div class="module-header">
+            <div class="module-icon" style="background:var(--brand-500);color:#fff;">.</div>
+            <div class="module-info">
+              <h3>Ratings</h3>
+              <p>Rider + station ratings, one per order</p>
+            </div>
+          </div>
+          <div class="module-stats">
+            <span><span class="num">4</span> routes</span>
+            <span><span class="num">1</span> service</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill complete" style="width:100%"></div></div>
+          <div class="progress-label"><span>100%</span><span>4/4 endpoints</span></div>
+        </div>
+
+        <div class="card module-card">
+          <div class="module-header">
+            <div class="module-icon" style="background:rgba(16,185,129,0.12);">🔔</div>
+            <div class="module-info">
+              <h3>Notifications</h3>
+              <p>In-app inbox, mark read, Resend transactional email</p>
+            </div>
+          </div>
+          <div class="module-stats">
+            <span><span class="num">3</span> routes</span>
+            <span><span class="num">1</span> package</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill partial" style="width:90%"></div></div>
+          <div class="progress-label"><span>90%</span><span>FCM push planned</span></div>
+        </div>
+
+        <div class="card module-card">
+          <div class="module-header">
+            <div class="module-icon" style="background:rgba(16,185,129,0.12);">🔌</div>
+            <div class="module-info">
+              <h3>Integrations</h3>
+              <p>API keys, HMAC-signed outbound webhooks + delivery log</p>
+            </div>
+          </div>
+          <div class="module-stats">
+            <span><span class="num">8</span> routes</span>
+            <span><span class="num">1</span> service</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill partial" style="width:90%"></div></div>
+          <div class="progress-label"><span>90%</span><span>Webhook retry/backoff pending</span></div>
+        </div>
+
+        <div class="card module-card">
+          <div class="module-header">
+            <div class="module-icon" style="background:rgba(16,185,129,0.12);">🛡️</div>
+            <div class="module-info">
+              <h3>Admin</h3>
+              <p>Platform stats, user/org management, audit trail</p>
+            </div>
+          </div>
+          <div class="module-stats">
+            <span><span class="num">5</span> routes</span>
+            <span><span class="num">1</span> service</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill partial" style="width:90%"></div></div>
+          <div class="progress-label"><span>90%</span><span>Audit-log read endpoints pending</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- API ROUTES -->
+    <section class="section">
+      <div class="section-title">API Routes <span class="count">93 total · 84 JWT · 9 public</span></div>
+
+      <div class="tabs" id="routeTabs">
+        <span class="tab active" data-tab="all">All Routes</span>
+        <span class="tab" data-tab="identity">Identity</span>
+        <span class="tab" data-tab="organization">Organizations</span>
+        <span class="tab" data-tab="consumer">Consumers</span>
+        <span class="tab" data-tab="order">Orders</span>
+        <span class="tab" data-tab="rider">Riders + Fleet</span>
+        <span class="tab" data-tab="dispatch">Dispatch</span>
+        <span class="tab" data-tab="tracking">Tracking</span>
+        <span class="tab" data-tab="payment">Payments</span>
+        <span class="tab" data-tab="pickup">Pickup Stations</span>
+        <span class="tab" data-tab="financial">Financial</span>
+        <span class="tab" data-tab="engagement">Engagement</span>
+        <span class="tab" data-tab="integrations">Integrations</span>
+        <span class="tab" data-tab="admin">Admin</span>
+        <span class="tab" data-tab="other">Other</span>
+      </div>
+
+      <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="overflow-x: auto; padding: 20px;">
+
+          <div class="route-content active" id="tab-all">
+            <table class="route-table">
+              <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+              <tbody>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/</td><td class="desc">Health check</td><td><span class="auth-badge public">public</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/auth/register</td><td class="desc">Register new user, sends OTP</td><td><span class="auth-badge public">public</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/auth/login</td><td class="desc">Login, returns JWT + opaque refresh token</td><td><span class="auth-badge public">public</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/auth/refresh</td><td class="desc">Rotate refresh token (7d)</td><td><span class="auth-badge public">public</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/auth/otp/send</td><td class="desc">Send 6-digit OTP</td><td><span class="auth-badge public">public</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/auth/otp/verify</td><td class="desc">Verify OTP, mark user verified</td><td><span class="auth-badge public">public</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/users/me</td><td class="desc">Current user profile with org memberships</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/organizations</td><td class="desc">Create organization</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/organizations/:id</td><td class="desc">Get organization by ID</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/organizations/:id/members</td><td class="desc">Add member (needs OWNER)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/organizations/:id/members</td><td class="desc">List organization members</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/consumers</td><td class="desc">Create consumer profile</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/consumers/me</td><td class="desc">Get current consumer profile</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/consumers/merchant-profile</td><td class="desc">Create/link merchant profile</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/consumers/merchant-profile</td><td class="desc">Get merchant profile with org</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/recipients</td><td class="desc">Create recipient</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/recipients</td><td class="desc">List recipients</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/recipients/:id</td><td class="desc">Get recipient by ID</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method put">PUT</span></td><td class="path">/api/recipients/:id</td><td class="desc">Update recipient</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method delete">DELETE</span></td><td class="path">/api/recipients/:id</td><td class="desc">Delete recipient</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/orders</td><td class="desc">Create delivery order, enqueues 24h expiry</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/orders</td><td class="desc">List my orders</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/orders/:id</td><td class="desc">Get order with relations</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/orders/:id/status</td><td class="desc">Update status → event log + settlement hooks</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/riders</td><td class="desc">Create rider profile (INDEPENDENT/COMPANY)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/riders/me</td><td class="desc">Get current rider profile</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/riders/me/availability</td><td class="desc">Update availability + location (Redis GEO)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/riders/me/availability</td><td class="desc">Get rider availability</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/riders/nearby</td><td class="desc">Nearby ONLINE riders (Redis GEO / Haversine fallback)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/vehicles/organizations/:orgId/vehicles</td><td class="desc">Create vehicle</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/vehicles/organizations/:orgId/vehicles</td><td class="desc">List vehicles with assignments</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/vehicles/:vehicleId/assign</td><td class="desc">Assign vehicle to rider</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/vehicles/:vehicleId/unassign</td><td class="desc">Unassign vehicle from rider</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/dispatch/orders/:orderId/start</td><td class="desc">Start dispatch, find nearby riders</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/dispatch/orders/:orderId</td><td class="desc">Get dispatch by order</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/dispatch/orders/:orderId/return</td><td class="desc">Return dispatch to station</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/dispatch/attempts/pending</td><td class="desc">Rider pending dispatch attempts</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/dispatch/attempts/:attemptId/accept</td><td class="desc">Accept attempt (auto-declines others)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/dispatch/attempts/:attemptId/decline</td><td class="desc">Decline attempt</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/tracking/location</td><td class="desc">Update rider location</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/tracking/orders/:orderId/rider</td><td class="desc">Get rider location for order</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/tracking/history</td><td class="desc">Get rider location history (max 500)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/payments/initialize/wallet</td><td class="desc">Paystack wallet top-up init</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/payments/verify</td><td class="desc">Verify funding → credit ledger</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/payments/initialize/order</td><td class="desc">Paystack order payment init</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/payments/orders/:orderId/pay</td><td class="desc">Pay order from wallet (reservation)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/payments/webhook</td><td class="desc">Paystack event webhook (HMAC verified)</td><td><span class="auth-badge public">public</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/payments/monnify/webhook</td><td class="desc">Monnify VA collection/reversal/disbursement</td><td><span class="auth-badge public">public</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/pickup-stations</td><td class="desc">Create pickup station</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/pickup-stations</td><td class="desc">List active stations</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/pickup-stations/:id</td><td class="desc">Get station details</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/pickup-stations/:id/parcels</td><td class="desc">List parcels at station</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/pickup-stations/:id/parcels/receive</td><td class="desc">Receive parcel → ARRIVED</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/pickup-stations/:id/parcels/:parcelId/ready</td><td class="desc">Mark READY_FOR_COLLECTION</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/pickup-stations/:id/parcels/:parcelId/store</td><td class="desc">Mark STORED</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/pickup-stations/:id/parcels/:parcelId/return</td><td class="desc">Mark RETURNED</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/pickup-stations/:id/parcels/:parcelId/collect</td><td class="desc">Collect parcel (verify pickup code)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/pickup-stations/orders/:orderId/pickup-code</td><td class="desc">Generate 6-digit code + QR token</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/financial/account</td><td class="desc">Get/create user financial account</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/financial/account/transactions</td><td class="desc">Ledger transactions (user)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/financial/virtual-account</td><td class="desc">Provision Monnify VA (actor-gated)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/financial/organizations/:orgId/account</td><td class="desc">Get/create org account</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/financial/organizations/:orgId/account/transactions</td><td class="desc">Org ledger transactions</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/financial/organizations/:orgId/virtual-account</td><td class="desc">Provision org Monnify VA</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/financial/earnings</td><td class="desc">Rider earnings records</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/financial/earnings/summary</td><td class="desc">Rider earnings summary</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/withdrawals</td><td class="desc">Request withdrawal (name enquiry + hold)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/withdrawals</td><td class="desc">List my withdrawals</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/withdrawals/:id</td><td class="desc">Get withdrawal</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/settlements/organizations/:orgId/generate</td><td class="desc">Generate 80/20 settlement</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/settlements/organizations/:orgId</td><td class="desc">List settlements</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/settlements/:id</td><td class="desc">Get settlement with items</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/ratings/riders</td><td class="desc">Rate a rider (1 per order)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/ratings/stations</td><td class="desc">Rate a station (1 per order)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/ratings/riders/:riderId</td><td class="desc">Paged rider ratings</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/ratings/stations/:stationId</td><td class="desc">Paged station ratings</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/notifications</td><td class="desc">List my notifications</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/notifications/:notificationId/read</td><td class="desc">Mark notification read</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/notifications/read-all</td><td class="desc">Mark all notifications read</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/integrations/organizations/:orgId/api-keys</td><td class="desc">Create API key (shown once)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/integrations/organizations/:orgId/api-keys</td><td class="desc">List API keys</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method delete">DELETE</span></td><td class="path">/api/integrations/organizations/:orgId/api-keys/:keyId</td><td class="desc">Revoke API key</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/integrations/organizations/:orgId/webhooks</td><td class="desc">Create outbound webhook</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/integrations/organizations/:orgId/webhooks</td><td class="desc">List webhooks</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/integrations/organizations/:orgId/webhooks/:webhookId/deliveries</td><td class="desc">Webhook delivery log</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/integrations/organizations/:orgId/webhooks/:webhookId</td><td class="desc">Update webhook</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method delete">DELETE</span></td><td class="path">/api/integrations/organizations/:orgId/webhooks/:webhookId</td><td class="desc">Delete webhook</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/admin/stats</td><td class="desc">Platform stats dashboard</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/admin/users</td><td class="desc">List all users (admin)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/admin/users/:userId</td><td class="desc">Update user status/role (admin)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/admin/organizations</td><td class="desc">List all organizations (admin)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/admin/organizations/:orgId/suspend</td><td class="desc">Suspend organization (admin)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/email/waitlist/confirm</td><td class="desc">Send waitlist confirmation email</td><td><span class="auth-badge public">public</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="route-content" id="tab-identity">
+            <div class="route-group">
+              <div class="route-group-title">Auth /api/auth</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/auth/register</td><td class="desc">Register (email/phone + password), sends OTP</td><td><span class="auth-badge public">public</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/auth/login</td><td class="desc">Returns JWT + opaque refresh token</td><td><span class="auth-badge public">public</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/auth/refresh</td><td class="desc">Rotate refresh token (7d)</td><td><span class="auth-badge public">public</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/auth/otp/send</td><td class="desc">Send 6-digit OTP</td><td><span class="auth-badge public">public</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/auth/otp/verify</td><td class="desc">Verify OTP, set is_verified</td><td><span class="auth-badge public">public</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="route-group">
+              <div class="route-group-title">Users /api/users</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/users/me</td><td class="desc">Profile with org memberships</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="route-content" id="tab-organization">
+            <div class="route-group">
+              <div class="route-group-title">Organizations /api/organizations</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/organizations</td><td class="desc">Create (MERCHANT/LOGISTICS/PICKUP_STATION)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/organizations/:id</td><td class="desc">Get with address + members</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/organizations/:id/members</td><td class="desc">Add member with role (needs OWNER)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/organizations/:id/members</td><td class="desc">List members</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="route-content" id="tab-consumer">
+            <div class="route-group">
+              <div class="route-group-title">Consumers /api/consumers</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/consumers</td><td class="desc">Create profile (INDIVIDUAL/MERCHANT)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/consumers/me</td><td class="desc">Get with recipients + merchant profile</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/consumers/merchant-profile</td><td class="desc">Link consumer to org as merchant</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/consumers/merchant-profile</td><td class="desc">Get merchant profile with org</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="route-group">
+              <div class="route-group-title">Recipients /api/recipients</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/recipients</td><td class="desc">Create recipient with address</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/recipients</td><td class="desc">List recipients</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/recipients/:id</td><td class="desc">Get recipient</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method put">PUT</span></td><td class="path">/api/recipients/:id</td><td class="desc">Update recipient</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method delete">DELETE</span></td><td class="path">/api/recipients/:id</td><td class="desc">Delete recipient</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="route-content" id="tab-order">
+            <div class="route-group">
+              <div class="route-group-title">Orders /api/orders</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/orders</td><td class="desc">Create with tracking number + 24h expiry job</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/orders</td><td class="desc">List with latest event</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/orders/:id</td><td class="desc">Full details with relations</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/orders/:id/status</td><td class="desc">Status update → OrderEvent + settlement/release</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="route-content" id="tab-rider">
+            <div class="route-group">
+              <div class="route-group-title">Riders /api/riders</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/riders</td><td class="desc">Create rider profile (INDEPENDENT/COMPANY)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/riders/me</td><td class="desc">Profile with availability + org</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/riders/me/availability</td><td class="desc">Set ONLINE/OFFLINE/BUSY (Redis GEO sync)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/riders/me/availability</td><td class="desc">Get current availability</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/riders/nearby</td><td class="desc">Redis GEO / Haversine nearby search</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="route-group">
+              <div class="route-group-title">Fleet /api/vehicles</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/vehicles/organizations/:orgId/vehicles</td><td class="desc">Create vehicle</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/vehicles/organizations/:orgId/vehicles</td><td class="desc">List vehicles with assignments</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/vehicles/:vehicleId/assign</td><td class="desc">Assign vehicle to rider</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/vehicles/:vehicleId/unassign</td><td class="desc">Unassign vehicle</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="route-content" id="tab-dispatch">
+            <div class="route-group">
+              <div class="route-group-title">Dispatch /api/dispatch</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/dispatch/orders/:orderId/start</td><td class="desc">Find nearby riders, create attempts, 60s timer</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/dispatch/orders/:orderId</td><td class="desc">Get dispatch with attempts</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/dispatch/orders/:orderId/return</td><td class="desc">Return dispatch to station</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/dispatch/attempts/pending</td><td class="desc">Rider's pending dispatch requests</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/dispatch/attempts/:attemptId/accept</td><td class="desc">Accept (auto-declines others)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/dispatch/attempts/:attemptId/decline</td><td class="desc">Decline dispatch</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="route-content" id="tab-tracking">
+            <div class="route-group">
+              <div class="route-group-title">Tracking /api/tracking</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/tracking/location</td><td class="desc">Update rider lat/lng</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/tracking/orders/:orderId/rider</td><td class="desc">Get rider's latest location for order</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/tracking/history</td><td class="desc">Own location history (max 500)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="route-content" id="tab-payment">
+            <div class="route-group">
+              <div class="route-group-title">Payments /api/payments</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/payments/initialize/wallet</td><td class="desc">Paystack init for wallet top-up</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/payments/verify</td><td class="desc">Verify + credit ledger (FUND_&lt;ref&gt;)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/payments/initialize/order</td><td class="desc">Paystack init for order payment</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/payments/orders/:orderId/pay</td><td class="desc">Pay from wallet → ledger reservation</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/payments/webhook</td><td class="desc">Paystack events (HMAC-SHA512 verified)</td><td><span class="auth-badge public">public</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/payments/monnify/webhook</td><td class="desc">VA collection / reversal / disbursement</td><td><span class="auth-badge public">public</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="route-content" id="tab-pickup">
+            <div class="route-group">
+              <div class="route-group-title">Pickup Stations /api/pickup-stations</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/pickup-stations</td><td class="desc">Create station (org must be PICKUP_STATION)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/pickup-stations</td><td class="desc">List active stations</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/pickup-stations/:id</td><td class="desc">Get station with address + org</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/pickup-stations/:id/parcels</td><td class="desc">List station parcels</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/pickup-stations/:id/parcels/receive</td><td class="desc">Mark parcel ARRIVED</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/pickup-stations/:id/parcels/:parcelId/ready</td><td class="desc">Mark READY_FOR_COLLECTION</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/pickup-stations/:id/parcels/:parcelId/store</td><td class="desc">Mark STORED</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/pickup-stations/:id/parcels/:parcelId/return</td><td class="desc">Mark RETURNED (return flow)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/pickup-stations/:id/parcels/:parcelId/collect</td><td class="desc">Verify code, mark COLLECTED</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/pickup-stations/orders/:orderId/pickup-code</td><td class="desc">Generate 6-digit code (SHA-256) + QR token</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="route-content" id="tab-financial">
+            <div class="route-group">
+              <div class="route-group-title">Financial Ledger /api/financial</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/financial/account</td><td class="desc">Get/create user ledger account</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/financial/account/transactions</td><td class="desc">User ledger transactions</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/financial/virtual-account</td><td class="desc">Provision Monnify VA (actor-gated)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/financial/organizations/:orgId/account</td><td class="desc">Get/create org ledger account</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/financial/organizations/:orgId/account/transactions</td><td class="desc">Org ledger transactions</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/financial/organizations/:orgId/virtual-account</td><td class="desc">Provision org Monnify VA</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/financial/earnings</td><td class="desc">Rider earnings records</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/financial/earnings/summary</td><td class="desc">Earnings total + delivery count</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="route-group">
+              <div class="route-group-title">Withdrawals /api/withdrawals</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/withdrawals</td><td class="desc">Name enquiry → hold → Monnify payout</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/withdrawals</td><td class="desc">List my withdrawals</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/withdrawals/:id</td><td class="desc">Get withdrawal detail</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="route-group">
+              <div class="route-group-title">Settlements /api/settlements</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/settlements/organizations/:orgId/generate</td><td class="desc">Generate 80/20 settlement report</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/settlements/organizations/:orgId</td><td class="desc">List settlements</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/settlements/:id</td><td class="desc">Get settlement with items</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="route-content" id="tab-engagement">
+            <div class="route-group">
+              <div class="route-group-title">Ratings /api/ratings</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/ratings/riders</td><td class="desc">Rate rider (1 per order)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/ratings/stations</td><td class="desc">Rate station (1 per order)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/ratings/riders/:riderId</td><td class="desc">Paged rider ratings</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/ratings/stations/:stationId</td><td class="desc">Paged station ratings</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="route-group">
+              <div class="route-group-title">Notifications /api/notifications</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/notifications</td><td class="desc">List my notifications</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/notifications/:notificationId/read</td><td class="desc">Mark notification read</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/notifications/read-all</td><td class="desc">Mark all read</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="route-content" id="tab-integrations">
+            <div class="route-group">
+              <div class="route-group-title">API Keys /api/integrations/organizations/:orgId</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/integrations/organizations/:orgId/api-keys</td><td class="desc">Create key (shown once, OWNER/FINANCE/OPERATIONS)</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/integrations/organizations/:orgId/api-keys</td><td class="desc">List API keys</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method delete">DELETE</span></td><td class="path">/api/integrations/organizations/:orgId/api-keys/:keyId</td><td class="desc">Revoke API key</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="route-group">
+              <div class="route-group-title">Webhooks (outbound)</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/integrations/organizations/:orgId/webhooks</td><td class="desc">Create HMAC-signed webhook</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/integrations/organizations/:orgId/webhooks</td><td class="desc">List webhooks</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/integrations/organizations/:orgId/webhooks/:webhookId/deliveries</td><td class="desc">Delivery log</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/integrations/organizations/:orgId/webhooks/:webhookId</td><td class="desc">Update webhook</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method delete">DELETE</span></td><td class="path">/api/integrations/organizations/:orgId/webhooks/:webhookId</td><td class="desc">Delete webhook</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="route-content" id="tab-admin">
+            <div class="route-group">
+              <div class="route-group-title">Admin /api/admin (requireAdmin)</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/admin/stats</td><td class="desc">Platform stats</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/admin/users</td><td class="desc">List all users</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method patch">PATCH</span></td><td class="path">/api/admin/users/:userId</td><td class="desc">Update user status/role</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/api/admin/organizations</td><td class="desc">List all organizations</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/admin/organizations/:orgId/suspend</td><td class="desc">Suspend organization</td><td><span class="auth-badge jwt">JWT</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="route-content" id="tab-other">
+            <div class="route-group">
+              <div class="route-group-title">Email &amp; Health</div>
+              <table class="route-table">
+                <thead><tr><th style="width:70px">Method</th><th>Path</th><th>Description</th><th style="width:60px">Auth</th></tr></thead>
+                <tbody>
+                  <tr class="route-row"><td><span class="method get">GET</span></td><td class="path">/</td><td class="desc">Health check</td><td><span class="auth-badge public">public</span></td></tr>
+                  <tr class="route-row"><td><span class="method post">POST</span></td><td class="path">/api/email/waitlist/confirm</td><td class="desc">Waitlist confirmation email (Resend)</td><td><span class="auth-badge public">public</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- DATA FLOW DIAGRAMS -->
+    <section class="section">
+      <div class="section-title">Key Data Flows</div>
+
+      <div class="two-col">
+        <div class="card">
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;">📦 Order Lifecycle</h3>
+          <div class="order-flow">
+            <span class="order-step active">CREATED</span>
+            <span class="order-conn">&rarr;</span>
+            <span class="order-step active">PAID</span>
+            <span class="order-conn">&rarr;</span>
+            <span class="order-step">SEARCHING</span>
+            <span class="order-conn">&rarr;</span>
+            <span class="order-step">RIDER ASSIGNED</span>
+            <span class="order-conn">&rarr;</span>
+            <span class="order-step">PICKED UP</span>
+            <span class="order-conn">&rarr;</span>
+            <span class="order-step">IN TRANSIT</span>
+            <span class="order-conn">&rarr;</span>
+            <span class="order-step">DELIVERED</span>
+            <span class="order-conn">|</span>
+            <span class="order-step">ARRIVED AT STATION</span>
+            <span class="order-conn">&rarr;</span>
+            <span class="order-step">READY</span>
+            <span class="order-conn">&rarr;</span>
+            <span class="order-step">STORED</span>
+            <span class="order-conn">&rarr;</span>
+            <span class="order-step">COLLECTED</span>
+            <span class="order-conn">|</span>
+            <span class="order-step">RETURNED</span>
+          </div>
+          <div style="font-size:12px;color:var(--grayx);margin-top:12px;">
+            <span class="pill done">Live</span> All statuses via <code style="color:#e4e4e7;">OrderEvent</code> audit trail · <span class="pill done">Live</span> 24h unpaid expiry job (BullMQ)
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;">💰 Monnify Funding & Ledger Flow</h3>
+          <div class="dataflow">
+            <div class="dataflow-row">
+              <span class="df-node user">Merchant</span>
+              <span class="df-arrow">&rarr;</span>
+              <span class="df-node external">Monnify VA</span>
+              <span class="df-arrow">&rarr;</span>
+              <span class="df-node external">Bank Transfer</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-arrow" style="font-size:10px;">&darr;</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-node external">Monnify Webhook</span>
+              <span class="df-arrow">&rarr;</span>
+              <span class="df-node system">POST /payments/monnify/webhook</span>
+              <span class="df-label">HMAC-SHA512 verified</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-arrow" style="font-size:10px;">&darr;</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-node data">provider_transactions</span>
+              <span class="df-arrow">&rarr;</span>
+              <span class="df-node data">FUNDING ledger entry</span>
+              <span class="df-label">idempotent: MONNIFY_&lt;ref&gt;</span>
+            </div>
+            <div class="dataflow-row">
+              <span class="df-node user">Consumer</span>
+              <span class="df-arrow">&rarr;</span>
+              <span class="df-node system">POST /orders/:orderId/pay</span>
+              <span class="df-label">available → reserved</span>
+            </div>
+            <div class="dataflow-row">
+              <span class="df-node system">DELIVERED</span>
+              <span class="df-arrow">&rarr;</span>
+              <span class="df-node data">settleDelivery</span>
+              <span class="df-label">80% rider/company · 20% platform</span>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--grayx);margin-top:8px;">
+            <span class="pill done">Live</span> Double-entry ledger in kobo (BigInt)
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col" style="margin-top:16px;">
+        <div class="card">
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;">🎯 Dispatch Engine Flow</h3>
+          <div class="dataflow">
+            <div class="dataflow-row">
+              <span class="df-node user">Consumer</span>
+              <span class="df-arrow">&rarr;</span>
+              <span class="df-node system">POST /dispatch/:orderId/start</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-arrow" style="font-size:10px;">&darr;</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-node data">Redis GEO: ONLINE riders in radius</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-arrow" style="font-size:10px;">&darr;</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-node data">Dispatch + attempts created</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-arrow" style="font-size:10px;">&darr;</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-node system">BullMQ 60s timeout job</span>
+              <span class="df-label">in-process fallback</span>
+            </div>
+            <div class="dataflow-row">
+              <span class="df-node user">Rider</span>
+              <span class="df-arrow">&rarr;</span>
+              <span class="df-node system">POST /attempts/:id/accept</span>
+              <span class="df-label">→ auto-declines others</span>
+            </div>
+            <div class="dataflow-row">
+              <span class="df-node system">Return flow</span>
+              <span class="df-arrow">&rarr;</span>
+              <span class="df-node system">POST /orders/:orderId/return</span>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--grayx);margin-top:8px;">
+            <span class="pill done">Live</span> BullMQ timeout + Redis GEO
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;">💳 Withdrawal Flow</h3>
+          <div class="dataflow">
+            <div class="dataflow-row">
+              <span class="df-node user">Rider / Station</span>
+              <span class="df-arrow">&rarr;</span>
+              <span class="df-node system">POST /withdrawals</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-arrow" style="font-size:10px;">&darr;</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-node data">Actor eligibility check</span>
+              <span class="df-label">INDEPENDENT_RIDER / LOGISTICS / PICKUP only</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-arrow" style="font-size:10px;">&darr;</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-node external">Monnify Name Enquiry</span>
+              <span class="df-label">mismatch aborts</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-arrow" style="font-size:10px;">&darr;</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-node data">Ledger hold: available → reserved</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-arrow" style="font-size:10px;">&darr;</span>
+            </div>
+            <div class="dataflow-row" style="padding-left:24px;">
+              <span class="df-node external">Monnify Disbursement</span>
+              <span class="df-label">w/ idempotency key</span>
+            </div>
+            <div class="dataflow-row">
+              <span class="df-node system">Webhook</span>
+              <span class="df-arrow">&rarr;</span>
+              <span class="df-node data">consume / reverse hold</span>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--grayx);margin-top:8px;">
+            <span class="pill done">Live</span> State machine: REQUESTED → PROCESSING → SUCCESSFUL/FAILED/REVERSED
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DATABASE SCHEMA OVERVIEW -->
+    <section class="section">
+      <div class="section-title">Database Schema <span class="count">40 models · 28 enums</span></div>
+
+      <div class="legend">
+        <span class="legend-item"><span style="color:var(--warning);font-weight:700;font-size:12px;">PK</span> Primary Key</span>
+        <span class="legend-item"><span style="color:var(--info);font-weight:700;font-size:12px;">FK</span> Foreign Key</span>
+      </div>
+
+      <div class="er-grid">
+        <div class="card er-model">
+          <h4>User <span class="er-badge">core</span></h4>
+          <div class="er-field"><span class="pk">PK</span> <span class="field-name">id</span> <span class="field-type">UUID</span></div>
+          <div class="er-field"><span class="field-name">email</span> <span class="field-type">String?</span> <span style="color:#FBBF24;font-size:9px;">UNIQUE</span></div>
+          <div class="er-field"><span class="field-name">phone</span> <span class="field-type">String?</span> <span style="color:#FBBF24;font-size:9px;">UNIQUE</span></div>
+          <div class="er-field"><span class="field-name">password_hash</span> <span class="field-type">String?</span></div>
+          <div class="er-field"><span class="field-name">role</span> <span class="field-type">ADMIN / USER</span></div>
+          <div class="er-field"><span class="field-name">status</span> <span class="field-type">UserStatus</span></div>
+          <div class="er-rels">
+            <div class="er-rel">→ Consumer (1:1) · Rider (1:1)</div>
+            <div class="er-rel">→ OrganizationMember (1:N)</div>
+            <div class="er-rel">→ RefreshToken (1:N) · OtpCode (1:N)</div>
+          </div>
+        </div>
+
+        <div class="card er-model">
+          <h4>Organization <span class="er-badge">core</span></h4>
+          <div class="er-field"><span class="pk">PK</span> <span class="field-name">id</span> <span class="field-type">UUID</span></div>
+          <div class="er-field"><span class="field-name">name</span> <span class="field-type">String</span></div>
+          <div class="er-field"><span class="field-name">type</span> <span class="field-type">OrganizationType</span></div>
+          <div class="er-field"><span class="fk">FK</span> <span class="field-name">address_id</span> <span class="field-type">String?</span></div>
+          <div class="er-rels">
+            <div class="er-rel">→ OrgMember · MerchantProfile · Rider</div>
+            <div class="er-rel">→ Vehicle · PickupStation (1:N)</div>
+            <div class="er-rel">→ Settlement · ApiKey · Webhook</div>
+          </div>
+        </div>
+
+        <div class="card er-model">
+          <h4>Order <span class="er-badge">core</span></h4>
+          <div class="er-field"><span class="pk">PK</span> <span class="field-name">id</span> <span class="field-type">UUID</span></div>
+          <div class="er-field"><span class="field-name">tracking_number</span> <span class="field-type">String</span> <span style="color:#FBBF24;font-size:9px;">UNIQUE</span></div>
+          <div class="er-field"><span class="fk">FK</span> <span class="field-name">consumer_id</span> <span class="field-type">String</span></div>
+          <div class="er-field"><span class="fk">FK</span> <span class="field-name">recipient_id</span> <span class="field-type">String</span></div>
+          <div class="er-field"><span class="field-name">status</span> <span class="field-type">OrderStatus</span></div>
+          <div class="er-rels">
+            <div class="er-rel">→ OrderEvent · StationParcel · Payment</div>
+            <div class="er-rel">→ Dispatch (1:1) · Reservation (1:1)</div>
+          </div>
+        </div>
+
+        <div class="card er-model">
+          <h4>Rider <span class="er-badge">core</span></h4>
+          <div class="er-field"><span class="pk">PK</span> <span class="field-name">id</span> <span class="field-type">UUID</span></div>
+          <div class="er-field"><span class="fk">FK</span> <span class="field-name">user_id</span> <span class="field-type">String</span> <span style="color:#FBBF24;font-size:9px;">UNIQUE</span></div>
+          <div class="er-field"><span class="field-name">type</span> <span class="field-type">RiderType</span></div>
+          <div class="er-rel">→ RiderAvailability · DispatchAttempt</div>
+          <div class="er-rel">→ RiderEarningRecord · RiderRating</div>
+        </div>
+
+        <div class="card er-model">
+          <h4>FinancialAccount <span class="er-badge">ledger</span></h4>
+          <div class="er-field"><span class="pk">PK</span> <span class="field-name">id</span> <span class="field-type">UUID</span></div>
+          <div class="er-field"><span class="field-name">owner_type</span> <span class="field-type">USER/ORG/PLATFORM</span></div>
+          <div class="er-field"><span class="field-name">available_balance</span> <span class="field-type">BigInt kobo</span></div>
+          <div class="er-field"><span class="field-name">reserved_balance</span> <span class="field-type">BigInt kobo</span></div>
+          <div class="er-field"><span class="field-name">balance</span> <span class="field-type">Float (legacy)</span></div>
+          <div class="er-rels">
+            <div class="er-rel">→ FinancialTransaction (1:N)</div>
+            <div class="er-rel">→ ProviderVirtualAccount (1:1)</div>
+          </div>
+        </div>
+
+        <div class="card er-model">
+          <h4>Reservation <span class="er-badge">ledger</span></h4>
+          <div class="er-field"><span class="pk">PK</span> <span class="field-name">id</span> <span class="field-type">UUID</span></div>
+          <div class="er-field"><span class="fk">FK</span> <span class="field-name">order_id</span> <span class="field-type">String</span> <span style="color:#FBBF24;font-size:9px;">UNIQUE</span></div>
+          <div class="er-field"><span class="field-name">amount</span> <span class="field-type">BigInt kobo</span></div>
+          <div class="er-field"><span class="field-name">status</span> <span class="field-type">ReservationStatus</span></div>
+          <div class="er-rels">
+            <div class="er-rel">→ Order (N:1) · Ledger entries</div>
+          </div>
+        </div>
+
+        <div class="card er-model">
+          <h4>FinancialTransaction <span class="er-badge">ledger</span></h4>
+          <div class="er-field"><span class="pk">PK</span> <span class="field-name">id</span> <span class="field-type">UUID</span></div>
+          <div class="er-field"><span class="field-name">reference</span> <span class="field-type">String</span> <span style="color:#FBBF24;font-size:9px;">UNIQUE</span></div>
+          <div class="er-field"><span class="field-name">type</span> <span class="field-type">FinancialTransactionType</span></div>
+          <div class="er-field"><span class="field-name">direction</span> <span class="field-type">CREDIT/DEBIT</span></div>
+          <div class="er-field"><span class="field-name">amount</span> <span class="field-type">BigInt kobo</span></div>
+          <div class="er-field"><span class="field-name">balance_after</span> <span class="field-type">BigInt</span></div>
+        </div>
+
+        <div class="card er-model">
+          <h4>Withdrawal <span class="er-badge">ledger</span></h4>
+          <div class="er-field"><span class="pk">PK</span> <span class="field-name">id</span> <span class="field-type">UUID</span></div>
+          <div class="er-field"><span class="field-name">status</span> <span class="field-type">WithdrawalStatus</span></div>
+          <div class="er-field"><span class="field-name">amount</span> <span class="field-type">BigInt kobo</span></div>
+          <div class="er-field"><span class="field-name">provider_reference</span> <span class="field-type">String?</span></div>
+          <div class="er-field"><span class="field-name">bank</span> <span class="field-type">account/bank</span></div>
+          <div class="er-rels">
+            <div class="er-rel">→ FinancialAccount · Ledger entries</div>
+          </div>
+        </div>
+
+        <div class="card er-model">
+          <h4>ProviderVirtualAccount <span class="er-badge">ledger</span></h4>
+          <div class="er-field"><span class="pk">PK</span> <span class="field-name">id</span> <span class="field-type">UUID</span></div>
+          <div class="er-field"><span class="fk">FK</span> <span class="field-name">financial_account_id</span> <span class="field-type">String</span> <span style="color:#FBBF24;font-size:9px;">UNIQUE</span></div>
+          <div class="er-field"><span class="field-name">account_number</span> <span class="field-type">String</span></div>
+          <div class="er-field"><span class="field-name">bank_name</span> <span class="field-type">String</span></div>
+          <div class="er-field"><span class="field-name">status</span> <span class="field-type">VirtualAccountStatus</span></div>
+        </div>
+
+        <div class="card er-model">
+          <h4>Dispatch <span class="er-badge">engine</span></h4>
+          <div class="er-field"><span class="pk">PK</span> <span class="field-name">id</span> <span class="field-type">UUID</span></div>
+          <div class="er-field"><span class="fk">FK</span> <span class="field-name">order_id</span> <span class="field-type">String</span> <span style="color:#FBBF24;font-size:9px;">UNIQUE</span></div>
+          <div class="er-field"><span class="field-name">status</span> <span class="field-type">DispatchStatus</span></div>
+          <div class="er-rels">
+            <div class="er-rel">→ DispatchAttempt (1:N)</div>
+          </div>
+        </div>
+
+        <div class="card er-model">
+          <h4>PickupStation <span class="er-badge">pudo</span></h4>
+          <div class="er-field"><span class="pk">PK</span> <span class="field-name">id</span> <span class="field-type">UUID</span></div>
+          <div class="er-field"><span class="field-name">name</span> <span class="field-type">String</span></div>
+          <div class="er-field"><span class="field-name">capacity</span> <span class="field-type">Int?</span></div>
+          <div class="er-rels">
+            <div class="er-rel">→ StationParcel · PickupVerificationLog</div>
+            <div class="er-rel">→ StationRating (1:N)</div>
+          </div>
+        </div>
+
+        <div class="card er-model">
+          <h4>Settlement <span class="er-badge">finance</span></h4>
+          <div class="er-field"><span class="pk">PK</span> <span class="field-name">id</span> <span class="field-type">UUID</span></div>
+          <div class="er-field"><span class="fk">FK</span> <span class="field-name">organization_id</span> <span class="field-type">String</span></div>
+          <div class="er-field"><span class="field-name">amount</span> <span class="field-type">Float</span></div>
+          <div class="er-field"><span class="field-name">name</span> <span class="field-type">String</span></div>
+          <div class="er-field"><span class="field-name">period</span> <span class="field-type">String?</span></div>
+          <div class="er-rels">
+            <div class="er-rel">→ SettlementItem (1:N)</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;font-size:12px;color:var(--grayx);text-align:center;">
+        Tier 2 — 28 more models: Address, OrganizationMember, MerchantProfile, Recipient, RiderAvailability, RiderLocationHistory, RiderVehicle, Vehicle, DeliveryOption, OrderEvent, DispatchAttempt, StationParcel, PickupCode, PickupVerificationLog, Payment, RefreshToken, OtpCode, ProviderTransaction, SettlementItem, RiderEarningRecord, RiderRating, StationRating, Notification, AuditLog, ApiKey, Webhook, WebhookDelivery
+      </div>
+    </section>
+
+    <!-- IMPLEMENTATION PROGRESS -->
+    <section class="section">
+      <div class="section-title">Implementation Progress</div>
+
+      <div class="two-col">
+        <div class="card">
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;">✅ Complete (100%)</h3>
+          <ul class="implementation-list">
+            <li><span class="impl-dot done"></span> Auth — Register, Login, Refresh rotation, OTP</li>
+            <li><span class="impl-dot done"></span> Organizations — CRUD + RBAC member management</li>
+            <li><span class="impl-dot done"></span> Consumers, merchant profiles, recipients</li>
+            <li><span class="impl-dot done"></span> Orders — lifecycle + event log + 24h expiry job</li>
+            <li><span class="impl-dot done"></span> Riders & vehicle fleet — availability + Redis GEO nearby</li>
+            <li><span class="impl-dot done"></span> Dispatch — attempts, accept/decline, BullMQ timeout</li>
+            <li><span class="impl-dot done"></span> Pickup stations — full parcel lifecycle incl. store/return</li>
+            <li><span class="impl-dot done"></span> Financial ledger — kobo double-entry, reservations, VA</li>
+            <li><span class="impl-dot done"></span> Ratings, in-app notifications, admin endpoints</li>
+            <li><span class="impl-dot done"></span> API keys + HMAC-signed outbound webhooks</li>
+            <li><span class="impl-dot done"></span> Tests — 56/56 passing across 13 files (Vitest)</li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;">🔄 In Progress (90-95%)</h3>
+            <ul class="implementation-list">
+              <li><span class="impl-dot wip"></span> Payments — Monnify VA + Paystack dual rail; refund flow pending</li>
+              <li><span class="impl-dot wip"></span> Withdrawals — payout engine live; production config pending</li>
+              <li><span class="impl-dot wip"></span> Settlements — 80/20 ledger settle + report; STATION_COMMISSION pending</li>
+              <li><span class="impl-dot wip"></span> Integrations — API keys + webhooks live; retry/backoff pending</li>
+              <li><span class="impl-dot wip"></span> Admin — endpoints live; audit-log read endpoints pending</li>
+              <li><span class="impl-dot wip"></span> Notifications — inbox live; FCM push planned</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;">📋 Planned (Not Started)</h3>
+            <ul class="implementation-list">
+              <li><span class="impl-dot planned"></span> Tracking — WebSocket live tracking (socket.io dep installed)</li>
+              <li><span class="impl-dot planned"></span> Mobile apps — Merchant & Rider (scaffolded, no screens yet)</li>
+              <li><span class="impl-dot planned"></span> SMS/Email OTP delivery (currently console-only)</li>
+              <li><span class="impl-dot planned"></span> FCM push notifications</li>
+              <li><span class="impl-dot planned"></span> Web waitlist modal — hook up WaitlistModal/WaitlistContext</li>
+              <li><span class="impl-dot planned"></span> ProviderTransaction schema fix — type/status fields mismatch</li>
+              <li><span class="impl-dot planned"></span> Reserve at order creation (ERD-compliant reservation timing)</li>
+              <li><span class="impl-dot planned"></span> Live database — apply migrations with prisma migrate deploy</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TECH STACK -->
+    <section class="section">
+      <div class="section-title">Tech Stack</div>
+      <div class="stack-grid">
+        <div class="stack-item">
+          <div class="stack-icon" style="background:rgba(255,106,0,0.12);">🟠</div>
+          <div class="stack-info"><h4>Hono.js</h4><p>Web framework + middleware</p></div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-icon" style="background:rgba(59,130,246,0.12);">🐘</div>
+          <div class="stack-info"><h4>PostgreSQL</h4><p>via Prisma ORM</p></div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-icon" style="background:rgba(16,185,129,0.12);">⚛️</div>
+          <div class="stack-info"><h4>React 18</h4><p>Vite + Tailwind</p></div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-icon" style="background:rgba(139,92,246,0.12);">📱</div>
+          <div class="stack-info"><h4>Expo</h4><p>React Native</p></div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-icon" style="background:rgba(245,158,11,0.12);">🏦</div>
+          <div class="stack-info"><h4>Monnify</h4><p>VA + disbursements + name enquiry</p></div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-icon" style="background:rgba(245,158,11,0.12);">🟡</div>
+          <div class="stack-info"><h4>Paystack</h4><p>Wallet/order funding (BC)</p></div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-icon" style="background:rgba(225,29,72,0.12);">📮</div>
+          <div class="stack-info"><h4>BullMQ</h4><p>Dispatch + order expiry queues</p></div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-icon" style="background:rgba(239,68,68,0.12);">🔴</div>
+          <div class="stack-info"><h4>Redis</h4><p>GEO index + queues</p></div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-icon" style="background:rgba(239,68,68,0.12);">✉️</div>
+          <div class="stack-info"><h4>Resend</h4><p>Transactional email + templates</p></div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-icon" style="background:rgba(139,92,246,0.12);">🧪</div>
+          <div class="stack-info"><h4>Vitest</h4><p>56 tests / 13 files</p></div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-icon" style="background:rgba(255,255,255,0.06);">🔐</div>
+          <div class="stack-info"><h4>JWT</h4><p>bcryptjs + jsonwebtoken</p></div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-icon" style="background:rgba(255,255,255,0.06);">📑</div>
+          <div class="stack-info"><h4>Zod</h4><p>Request validation</p></div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-icon" style="background:rgba(255,255,255,0.06);">📦</div>
+          <div class="stack-info"><h4>npm workspaces</h4><p>Monorepo + Nx</p></div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-icon" style="background:rgba(59,130,246,0.12);">🐳</div>
+          <div class="stack-info"><h4>Docker + GHCR</h4><p>Multi-stage Dockerfile</p></div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-icon" style="background:rgba(245,158,11,0.12);">☁️</div>
+          <div class="stack-info"><h4>Firebase</h4><p>Hosting + Firestore</p></div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-icon" style="background:rgba(99,102,241,0.12);">🔷</div>
+          <div class="stack-info"><h4>TypeScript</h4><p>Full type safety</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SHARED PACKAGES -->
+    <section class="section">
+      <div class="section-title">Shared Packages <span class="count">8 internal</span></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;">
+        <div class="card" style="padding:16px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <span style="font-size:16px;">🗄️</span>
+            <span style="font-weight:600;font-size:14px;">@xendbox/database</span>
+          </div>
+          <p style="font-size:12px;color:var(--grayx);">PrismaClient singleton</p>
+          <span class="pill done">Complete</span>
+        </div>
+        <div class="card" style="padding:16px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <span style="font-size:16px;">🔐</span>
+            <span style="font-weight:600;font-size:14px;">@xendbox/auth</span>
+          </div>
+          <p style="font-size:12px;color:var(--grayx);">JWT, bcrypt, OTP, refresh tokens</p>
+          <span class="pill done">Complete</span>
+        </div>
+        <div class="card" style="padding:16px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <span style="font-size:16px;">📧</span>
+            <span style="font-weight:600;font-size:14px;">@xendbox/notifications</span>
+          </div>
+          <p style="font-size:12px;color:var(--grayx);">Resend sender + 5 templates</p>
+          <span class="pill done">Complete</span>
+        </div>
+        <div class="card" style="padding:16px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <span style="font-size:16px;">🗺️</span>
+            <span style="font-weight:600;font-size:14px;">@xendbox/maps</span>
+          </div>
+          <p style="font-size:12px;color:var(--grayx);">Redis GEO + Haversine fallback</p>
+          <span class="pill done">Complete</span>
+        </div>
+        <div class="card" style="padding:16px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <span style="font-size:16px;">🔴</span>
+            <span style="font-weight:600;font-size:14px;">@xendbox/redis</span>
+          </div>
+          <p style="font-size:12px;color:var(--grayx);">ioredis singleton + availability</p>
+          <span class="pill done">Complete</span>
+        </div>
+        <div class="card" style="padding:16px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <span style="font-size:16px;">📐</span>
+            <span style="font-weight:600;font-size:14px;">@xendbox/types</span>
+          </div>
+          <p style="font-size:12px;color:var(--grayx);">Shared enums + interfaces</p>
+          <span class="pill done">Complete</span>
+        </div>
+        <div class="card" style="padding:16px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <span style="font-size:16px;">✅</span>
+            <span style="font-weight:600;font-size:14px;">@xendbox/validation</span>
+          </div>
+          <p style="font-size:12px;color:var(--grayx);">Zod schemas per domain</p>
+          <span class="pill done">Complete</span>
+        </div>
+        <div class="card" style="padding:16px;opacity:0.5;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <span style="font-size:16px;">📦</span>
+            <span style="font-weight:600;font-size:14px;">@xendbox/shared</span>
+          </div>
+          <p style="font-size:12px;color:var(--grayx);">Stub — empty</p>
+          <span class="pill planned">Stub</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <section class="section" style="padding-bottom:60px;">
+      <div class="section-divider"></div>
+      <div style="text-align:center;padding:24px 0 0;font-size:13px;color:var(--grayx);">
+        Xendbox — AI-Native Delivery Infrastructure for Africa · Phase 2 Financial Ledger · Built with TypeScript · Monorepo · Domain-Driven Design
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', function() {
+        const target = this.dataset.tab;
+        tabs.forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        document.querySelectorAll('.route-content').forEach(c => c.classList.remove('active'));
+        const content = document.getElementById('tab-' + target);
+        if (content) content.classList.add('active');
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

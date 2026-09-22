@@ -25,7 +25,7 @@ export async function geoAddRider(riderId: string, latitude: number, longitude: 
       await redis.geoadd(ONLINE_RIDERS_KEY, longitude, latitude, riderId)
       return
     } catch {
-      /* fall back to PostgreSQL */
+      /* fall through to PostgreSQL */
     }
   }
 }
@@ -37,7 +37,7 @@ export async function geoRemoveRider(riderId: string): Promise<void> {
       await redis.zrem(ONLINE_RIDERS_KEY, riderId)
       return
     } catch {
-      /* fall back to PostgreSQL */
+      /* fall through to PostgreSQL */
     }
   }
 }
@@ -61,7 +61,8 @@ export async function geoFindNearby(
         "km",
         "ASC"
       )
-      return (members as string[]).filter((id) => id !== excludeRiderId)
+      const result = (members as string[]).filter((id) => id !== excludeRiderId)
+      if (result.length > 0) return result
     } catch {
       /* fall through to PostgreSQL */
     }
